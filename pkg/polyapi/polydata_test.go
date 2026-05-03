@@ -3,8 +3,10 @@ package polyapi_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -21,6 +23,53 @@ func newTestClient(server *httptest.Server) *polyapi.Polydata {
 }
 
 // --- tests ---
+
+func TestGetUser_Success(t *testing.T) {
+	client := polyapi.NewPolydata()
+
+	user, err := client.GetUserProfile(context.Background(), "0x3a6efc8104f17068a8b08360518b0618c4e53291")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(user.ClosedPositions) < 9 {
+		t.Fatalf("expected at least 9 result, got %d", len(user.ClosedPositions))
+	}
+	endDate, err := time.Parse(time.RFC3339, "2026-04-12T00:00:00Z")
+	if err != nil {
+		t.Fatalf("failed to parse endDate: %v", err)
+	}
+
+	expected := polyapi.ClosedPosition{
+		ProxyWallet:     "0x3a6efc8104f17068a8b08360518b0618c4e53291",
+		Asset:           "108467680991907973332971124960505257986838148478746375287542479386369254259528",
+		ConditionID:     "0x19966af675c9fd1a4db02b3cf7da257cfe505c0ff67332131471e9e03849c520",
+		AvgPrice:        0.366525,
+		TotalBought:     532.410855,
+		RealizedPnl:     -44.665945378874994,
+		CurPrice:        1,
+		Title:           "Will 60 or more ships transit the Strait of Hormuz between April 6-April 12?",
+		Slug:            "will-60-or-more-ships-transit-the-strait-of-hormuz-between-april-6-april-12",
+		Icon:            "https://polymarket-upload.s3.us-east-2.amazonaws.com/will-ships-transit-the-strait-of-hormuz-on-any-day-in-march-ERARnetK0FJm.jpg",
+		EventSlug:       "how-many-ships-transit-the-strait-of-hormuz-this-week-apr-6-12",
+		Outcome:         "No",
+		OutcomeIndex:    1,
+		OppositeOutcome: "Yes",
+		OppositeAsset:   "24900923535726670038877202156345903436615583586980981289949992422695625868100",
+		EndDate:         endDate,
+		Timestamp:       1775754855,
+	}
+
+	ok, diff := containsClosedPosition(user.ClosedPositions, expected)
+	if !ok {
+		t.Fatalf("position mismatch for slug=%s:\n%s", expected.Slug, diff)
+	}
+
+	x := user.GetPredictionRate()
+	if x <= 0 || x > 1 {
+		t.Fatalf("unexpected prediction rate: %f", x)
+	}
+}
 
 func TestGetClosedPositions_Success(t *testing.T) {
 	client := polyapi.NewPolydata()
@@ -58,36 +107,78 @@ func TestGetClosedPositions_Success(t *testing.T) {
 		Timestamp:       1775631405,
 	}
 
-	if !containsClosedPosition(res, expected) {
-		t.Fatal("missing expected position")
+	ok, diff := containsClosedPosition(res, expected)
+	if !ok {
+		t.Fatalf("mismatch for slug=%s:\n%s", expected.Slug, diff)
 	}
 }
 
-func containsClosedPosition(results []polyapi.ClosedPosition, expected polyapi.ClosedPosition) bool {
+func containsClosedPosition(results []polyapi.ClosedPosition, expected polyapi.ClosedPosition) (bool, string) {
 	for _, p := range results {
-		if p.ProxyWallet == expected.ProxyWallet &&
-			p.Asset == expected.Asset &&
-			p.ConditionID == expected.ConditionID &&
-			p.AvgPrice == expected.AvgPrice &&
-			p.TotalBought == expected.TotalBought &&
-			p.RealizedPnl == expected.RealizedPnl &&
-			p.CurPrice == expected.CurPrice &&
-			p.Title == expected.Title &&
-			p.Slug == expected.Slug &&
-			p.Icon == expected.Icon &&
-			p.EventSlug == expected.EventSlug &&
-			p.Outcome == expected.Outcome &&
-			p.OutcomeIndex == expected.OutcomeIndex &&
-			p.OppositeOutcome == expected.OppositeOutcome &&
-			p.OppositeAsset == expected.OppositeAsset &&
-			p.EndDate.Equal(expected.EndDate) &&
-			p.Timestamp == expected.Timestamp {
-			return true
+		if p.Slug != expected.Slug {
+			continue
 		}
-	}
-	return false
-}
 
+		var diffs []string
+
+		if p.ProxyWallet != expected.ProxyWallet {
+			diffs = append(diffs, fmt.Sprintf("ProxyWallet mismatch: got=%s expected=%s", p.ProxyWallet, expected.ProxyWallet))
+		}
+		if p.Asset != expected.Asset {
+			diffs = append(diffs, fmt.Sprintf("Asset mismatch: got=%s expected=%s", p.Asset, expected.Asset))
+		}
+		if p.ConditionID != expected.ConditionID {
+			diffs = append(diffs, fmt.Sprintf("ConditionID mismatch: got=%s expected=%s", p.ConditionID, expected.ConditionID))
+		}
+		if p.AvgPrice != expected.AvgPrice {
+			diffs = append(diffs, fmt.Sprintf("AvgPrice mismatch: got=%f expected=%f", p.AvgPrice, expected.AvgPrice))
+		}
+		if p.TotalBought != expected.TotalBought {
+			diffs = append(diffs, fmt.Sprintf("TotalBought mismatch: got=%f expected=%f", p.TotalBought, expected.TotalBought))
+		}
+		if p.RealizedPnl != expected.RealizedPnl {
+			diffs = append(diffs, fmt.Sprintf("RealizedPnl mismatch: got=%f expected=%f", p.RealizedPnl, expected.RealizedPnl))
+		}
+		if p.CurPrice != expected.CurPrice {
+			diffs = append(diffs, fmt.Sprintf("CurPrice mismatch: got=%f expected=%f", p.CurPrice, expected.CurPrice))
+		}
+		if p.Title != expected.Title {
+			diffs = append(diffs, fmt.Sprintf("Title mismatch: got=%s expected=%s", p.Title, expected.Title))
+		}
+		if p.Icon != expected.Icon {
+			diffs = append(diffs, fmt.Sprintf("Icon mismatch: got=%s expected=%s", p.Icon, expected.Icon))
+		}
+		if p.EventSlug != expected.EventSlug {
+			diffs = append(diffs, fmt.Sprintf("EventSlug mismatch: got=%s expected=%s", p.EventSlug, expected.EventSlug))
+		}
+		if p.Outcome != expected.Outcome {
+			diffs = append(diffs, fmt.Sprintf("Outcome mismatch: got=%s expected=%s", p.Outcome, expected.Outcome))
+		}
+		if p.OutcomeIndex != expected.OutcomeIndex {
+			diffs = append(diffs, fmt.Sprintf("OutcomeIndex mismatch: got=%d expected=%d", p.OutcomeIndex, expected.OutcomeIndex))
+		}
+		if p.OppositeOutcome != expected.OppositeOutcome {
+			diffs = append(diffs, fmt.Sprintf("OppositeOutcome mismatch: got=%s expected=%s", p.OppositeOutcome, expected.OppositeOutcome))
+		}
+		if p.OppositeAsset != expected.OppositeAsset {
+			diffs = append(diffs, fmt.Sprintf("OppositeAsset mismatch: got=%s expected=%s", p.OppositeAsset, expected.OppositeAsset))
+		}
+		if !p.EndDate.Equal(expected.EndDate) {
+			diffs = append(diffs, fmt.Sprintf("EndDate mismatch: got=%s expected=%s", p.EndDate, expected.EndDate))
+		}
+		if p.Timestamp != expected.Timestamp {
+			diffs = append(diffs, fmt.Sprintf("Timestamp mismatch: got=%d expected=%d", p.Timestamp, expected.Timestamp))
+		}
+
+		if len(diffs) == 0 {
+			return true, ""
+		}
+
+		return false, strings.Join(diffs, "\n")
+	}
+
+	return false, fmt.Sprintf("no position found with slug=%s", expected.Slug)
+}
 func TestMockGetClosedPositions_Success(t *testing.T) {
 	mockPositions := []polyapi.ClosedPosition{
 		{

@@ -2,11 +2,6 @@ package polyapi
 
 import "time"
 
-type User struct {
-	UserId          string
-	ClosedPositions []ClosedPosition
-}
-
 type ClosedPosition struct {
 	ProxyWallet     string    `json:"proxyWallet"`
 	Asset           string    `json:"asset"`
