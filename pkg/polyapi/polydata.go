@@ -49,7 +49,7 @@ func (c *Polydata) GetClosedPositions(ctx context.Context, user string, limit, o
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		var apiErr APIError
+		var apiErr PolyError
 		if err := json.NewDecoder(resp.Body).Decode(&apiErr); err == nil && apiErr.Error() != "" {
 			return nil, &apiErr
 		}

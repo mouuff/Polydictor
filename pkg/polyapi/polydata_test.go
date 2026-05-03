@@ -230,7 +230,7 @@ func TestMockGetClosedPositions_APIError(t *testing.T) {
 		t.Fatal("expected error, got nil")
 	}
 
-	apiErr, ok := err.(*polyapi.APIError)
+	apiErr, ok := err.(*polyapi.PolyError)
 	if !ok {
 		t.Fatalf("expected APIError, got %T", err)
 	}

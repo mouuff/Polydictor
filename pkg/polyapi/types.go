@@ -23,10 +23,10 @@ type ClosedPosition struct {
 }
 
 // API error format
-type APIError struct {
+type PolyError struct {
 	Err string `json:"error"`
 }
 
-func (e *APIError) Error() string {
+func (e *PolyError) Error() string {
 	return e.Err
 }
