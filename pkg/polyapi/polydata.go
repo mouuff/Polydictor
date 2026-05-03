@@ -94,3 +94,15 @@ func (c *Polydata) GetAllClosedPositions(ctx context.Context, user string) ([]Cl
 
 	return allPositions, nil
 }
+
+func (c *Polydata) GetUserProfile(ctx context.Context, user string) (*User, error) {
+	closedPositions, err := c.GetAllClosedPositions(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	return &User{
+		UserId:          user,
+		ClosedPositions: closedPositions,
+	}, nil
+}

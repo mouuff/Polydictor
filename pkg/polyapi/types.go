@@ -2,6 +2,11 @@ package polyapi
 
 import "time"
 
+type User struct {
+	UserId          string
+	ClosedPositions []ClosedPosition
+}
+
 type ClosedPosition struct {
 	ProxyWallet     string    `json:"proxyWallet"`
 	Asset           string    `json:"asset"`
@@ -18,7 +23,7 @@ type ClosedPosition struct {
 	OutcomeIndex    int       `json:"outcomeIndex"`
 	OppositeOutcome string    `json:"oppositeOutcome"`
 	OppositeAsset   string    `json:"oppositeAsset"`
-	EndDate         time.Time `json:"endDate"` // or string
+	EndDate         time.Time `json:"endDate"`
 	Timestamp       int64     `json:"timestamp"`
 }
 
