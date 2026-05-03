@@ -27,7 +27,7 @@ func newTestClient(server *httptest.Server) *polyapi.Polydata {
 func TestGetUser_Success(t *testing.T) {
 	client := polyapi.NewPolydata()
 
-	user, err := client.GetUserProfile(context.Background(), "0x3a6efc8104f17068a8b08360518b0618c4e53291")
+	user, err := client.GetUser(context.Background(), "0x3a6efc8104f17068a8b08360518b0618c4e53291")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

@@ -21,6 +21,7 @@ func RunSubCommand(args []string) error {
 
 	cmds := []SubCommand{
 		&PredictCmd{},
+		&UserCmd{},
 	}
 
 	if len(args) < 1 {

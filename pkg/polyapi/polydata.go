@@ -21,8 +21,12 @@ func NewPolydata() *Polydata {
 	}
 }
 
-// Correct version
+// TODO
+// https://docs.polymarket.com/api-reference/core/get-top-holders-for-markets?playground=open
+//
+
 // https://docs.polymarket.com/api-reference/core/get-closed-positions-for-a-user
+// https://data-api.polymarket.com/closed-positions?limit=10&sortBy=REALIZEDPNL&sortDirection=DESC&user=0x3a6EFc8104f17068a8B08360518B0618c4e53291
 func (c *Polydata) GetClosedPositions(ctx context.Context, user string, limit, offset int) ([]ClosedPosition, error) {
 	u, err := url.Parse(c.BaseURL + "/closed-positions")
 	if err != nil {
@@ -95,7 +99,7 @@ func (c *Polydata) GetAllClosedPositions(ctx context.Context, user string) ([]Cl
 	return allPositions, nil
 }
 
-func (c *Polydata) GetUserProfile(ctx context.Context, user string) (*User, error) {
+func (c *Polydata) GetUser(ctx context.Context, user string) (*User, error) {
 	closedPositions, err := c.GetAllClosedPositions(ctx, user)
 	if err != nil {
 		return nil, err
