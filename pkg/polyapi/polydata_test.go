@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mouuff/predictor/pkg/polyapi"
+	"github.com/mouuff/polydictor/pkg/polyapi"
 )
 
 // --- helpers ---
