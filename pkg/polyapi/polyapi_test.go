@@ -15,8 +15,8 @@ import (
 
 // --- helpers ---
 
-func newTestClient(server *httptest.Server) *polyapi.Polydata {
-	return &polyapi.Polydata{
+func newTestClient(server *httptest.Server) *polyapi.Polyapi {
+	return &polyapi.Polyapi{
 		BaseURL:    server.URL,
 		HTTPClient: server.Client(),
 	}
@@ -25,7 +25,7 @@ func newTestClient(server *httptest.Server) *polyapi.Polydata {
 // --- tests ---
 
 func TestGetUser_Success(t *testing.T) {
-	client := polyapi.NewPolydata()
+	client := polyapi.NewPolyapi()
 
 	user, err := client.GetUser(context.Background(), "0x3a6efc8104f17068a8b08360518b0618c4e53291")
 	if err != nil {
@@ -72,7 +72,7 @@ func TestGetUser_Success(t *testing.T) {
 }
 
 func TestGetClosedPositions_Success(t *testing.T) {
-	client := polyapi.NewPolydata()
+	client := polyapi.NewPolyapi()
 
 	res, err := client.GetAllClosedPositions(context.Background(), "0x5669c2d70390d821291a6843e587c6500f310f13")
 	if err != nil {

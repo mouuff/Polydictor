@@ -9,13 +9,13 @@ import (
 	"strconv"
 )
 
-type Polydata struct {
+type Polyapi struct {
 	BaseURL    string
 	HTTPClient *http.Client
 }
 
-func NewPolydata() *Polydata {
-	return &Polydata{
+func NewPolyapi() *Polyapi {
+	return &Polyapi{
 		BaseURL:    "https://data-api.polymarket.com",
 		HTTPClient: http.DefaultClient,
 	}
@@ -23,11 +23,10 @@ func NewPolydata() *Polydata {
 
 // TODO
 // https://docs.polymarket.com/api-reference/core/get-top-holders-for-markets?playground=open
-//
 
 // https://docs.polymarket.com/api-reference/core/get-closed-positions-for-a-user
 // https://data-api.polymarket.com/closed-positions?limit=10&sortBy=REALIZEDPNL&sortDirection=DESC&user=0x3a6EFc8104f17068a8B08360518B0618c4e53291
-func (c *Polydata) GetClosedPositions(ctx context.Context, user string, limit, offset int) ([]ClosedPosition, error) {
+func (c *Polyapi) GetClosedPositions(ctx context.Context, user string, limit, offset int) ([]ClosedPosition, error) {
 	u, err := url.Parse(c.BaseURL + "/closed-positions")
 	if err != nil {
 		return nil, err
@@ -70,7 +69,7 @@ func (c *Polydata) GetClosedPositions(ctx context.Context, user string, limit, o
 }
 
 // Fetch ALL closed positions (auto-pagination)
-func (c *Polydata) GetAllClosedPositions(ctx context.Context, user string) ([]ClosedPosition, error) {
+func (c *Polyapi) GetAllClosedPositions(ctx context.Context, user string) ([]ClosedPosition, error) {
 	// Required range: 0 <= x <= 50
 	const limit = 50
 
@@ -99,7 +98,7 @@ func (c *Polydata) GetAllClosedPositions(ctx context.Context, user string) ([]Cl
 	return allPositions, nil
 }
 
-func (c *Polydata) GetUser(ctx context.Context, user string) (*User, error) {
+func (c *Polyapi) GetUser(ctx context.Context, user string) (*User, error) {
 	closedPositions, err := c.GetAllClosedPositions(ctx, user)
 	if err != nil {
 		return nil, err

@@ -36,8 +36,8 @@ func (cmd *UserCmd) Run() error {
 	}
 
 	var ctx = context.Background()
-	var polydata = polyapi.NewPolydata()
-	user, err := polydata.GetUser(ctx, cmd.id)
+	var polyapi = polyapi.NewPolyapi()
+	user, err := polyapi.GetUser(ctx, cmd.id)
 	if err != nil {
 		return err
 	}
