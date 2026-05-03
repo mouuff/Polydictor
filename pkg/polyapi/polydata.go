@@ -14,7 +14,7 @@ type Polydata struct {
 	HTTPClient *http.Client
 }
 
-func GetPolydata() *Polydata {
+func NewPolydata() *Polydata {
 	return &Polydata{
 		BaseURL:    "https://data-api.polymarket.com",
 		HTTPClient: http.DefaultClient,
