@@ -23,3 +23,29 @@ func (u *User) GetPredictionRate() float64 {
 
 	return profitablePositions / totalPositions
 }
+
+func (u *User) GetProfitRate() float64 {
+	var netProfit float64
+	var totalInvestment float64
+
+	for _, p := range u.ClosedPositions {
+		netProfit += p.RealizedPnl
+		totalInvestment += p.TotalBought * p.AvgPrice
+	}
+
+	if totalInvestment == 0 {
+		return 0
+	}
+
+	return netProfit / totalInvestment
+}
+
+func (u *User) GetProfit() float64 {
+	var netProfit float64
+
+	for _, p := range u.ClosedPositions {
+		netProfit += p.RealizedPnl
+	}
+
+	return netProfit
+}
