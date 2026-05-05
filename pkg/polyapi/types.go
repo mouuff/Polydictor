@@ -2,6 +2,14 @@ package polyapi
 
 import "time"
 
+type Market struct {
+	Id          string `json:"id"`
+	ConditionId string `json:"conditionId"`
+	Slug        string `json:"slug"`
+	Description string `json:"description"`
+	Question    string `json:"question"`
+}
+
 type ClosedPosition struct {
 	ProxyWallet     string    `json:"proxyWallet"`
 	Asset           string    `json:"asset"`

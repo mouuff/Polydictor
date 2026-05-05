@@ -17,12 +17,37 @@ import (
 
 func newTestClient(server *httptest.Server) *polyapi.Polyapi {
 	return &polyapi.Polyapi{
-		BaseURL:    server.URL,
-		HTTPClient: server.Client(),
+		BaseDataURL:  server.URL,
+		BaseGammaURL: server.URL,
+		HTTPClient:   server.Client(),
 	}
 }
 
 // --- tests ---
+
+func TestGetMarketBySlug_Success(t *testing.T) {
+	client := polyapi.NewPolyapi()
+
+	market, err := client.GetMarketBySlug(context.Background(), "will-the-steam-machine-cost-700-or-more-at-release")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if market.Id != "683344" {
+		t.Fatalf("unexpected market id: got=%s expected=%s", market.Id, "0x19966af675c9fd1a4db02b3cf7da257cfe505c0ff67332131471e9e03849c520")
+	}
+
+	if market.Slug != "will-the-steam-machine-cost-700-or-more-at-release" {
+		t.Fatalf("unexpected market slug: got=%s expected=%s", market.Slug, "will-the-steam-machine-cost-700-or-more-at-release")
+	}
+
+	if market.Question != "Will the Steam Machine cost $700 or more at release?" {
+		t.Fatalf("unexpected market question: got=%s expected=%s", market.Question, "Will the Steam Machine cost $700 or more at release?")
+	}
+
+	if market.ConditionId != "0xfc613d67a16f3a9a10b63baa0f48cee855d49310b33643112e43f769d68b80a5" {
+		t.Fatalf("unexpected market condition id: got=%s expected=%s", market.ConditionId, "0x19966af675c9fd1a4db02b3cf7da257cfe505c0ff67332131471e9e03849c520")
+	}
+}
 
 func TestGetUser_Success(t *testing.T) {
 	client := polyapi.NewPolyapi()

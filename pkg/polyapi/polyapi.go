@@ -10,24 +10,54 @@ import (
 )
 
 type Polyapi struct {
-	BaseURL    string
-	HTTPClient *http.Client
+	BaseDataURL  string
+	BaseGammaURL string
+	HTTPClient   *http.Client
 }
 
 func NewPolyapi() *Polyapi {
 	return &Polyapi{
-		BaseURL:    "https://data-api.polymarket.com",
-		HTTPClient: http.DefaultClient,
+		BaseDataURL:  "https://data-api.polymarket.com",
+		BaseGammaURL: "https://gamma-api.polymarket.com",
+		HTTPClient:   http.DefaultClient,
 	}
 }
 
-// TODO
 // https://docs.polymarket.com/api-reference/core/get-top-holders-for-markets?playground=open
+// https://gamma-api.polymarket.com/markets/slug/will-the-steam-machine-cost-700-or-more-at-release
+func (c *Polyapi) GetMarketBySlug(ctx context.Context, slug string) (*Market, error) {
+	u, err := url.Parse(c.BaseGammaURL + "/markets/slug/" + slug)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, c.handleError(resp)
+	}
+
+	var market Market
+	if err := json.NewDecoder(resp.Body).Decode(&market); err != nil {
+		return nil, err
+	}
+
+	return &market, nil
+}
 
 // https://docs.polymarket.com/api-reference/core/get-closed-positions-for-a-user
 // https://data-api.polymarket.com/closed-positions?limit=10&sortBy=REALIZEDPNL&sortDirection=DESC&user=0x3a6EFc8104f17068a8B08360518B0618c4e53291
 func (c *Polyapi) GetClosedPositions(ctx context.Context, user string, limit, offset int) ([]ClosedPosition, error) {
-	u, err := url.Parse(c.BaseURL + "/closed-positions")
+	u, err := url.Parse(c.BaseDataURL + "/closed-positions")
 	if err != nil {
 		return nil, err
 	}
@@ -52,12 +82,7 @@ func (c *Polyapi) GetClosedPositions(ctx context.Context, user string, limit, of
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		var apiErr PolyError
-		if err := json.NewDecoder(resp.Body).Decode(&apiErr); err == nil && apiErr.Error() != "" {
-			return nil, &apiErr
-		}
-
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return nil, c.handleError(resp)
 	}
 
 	var positions []ClosedPosition
@@ -108,4 +133,13 @@ func (c *Polyapi) GetUser(ctx context.Context, user string) (*User, error) {
 		UserId:          user,
 		ClosedPositions: closedPositions,
 	}, nil
+}
+
+func (c *Polyapi) handleError(resp *http.Response) error {
+	var apiErr PolyError
+	if err := json.NewDecoder(resp.Body).Decode(&apiErr); err == nil && apiErr.Error() != "" {
+		return &apiErr
+	}
+
+	return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 }
