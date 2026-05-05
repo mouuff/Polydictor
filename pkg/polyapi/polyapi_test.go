@@ -47,6 +47,20 @@ func TestGetMarketBySlug_Success(t *testing.T) {
 	if market.ConditionId != "0xfc613d67a16f3a9a10b63baa0f48cee855d49310b33643112e43f769d68b80a5" {
 		t.Fatalf("unexpected market condition id: got=%s expected=%s", market.ConditionId, "0x19966af675c9fd1a4db02b3cf7da257cfe505c0ff67332131471e9e03849c520")
 	}
+
+	if market.Outcomes[0] != "Yes" {
+		t.Fatalf("unexpected market outcome: got=%s expected=%s", market.Outcomes[0], "Yes")
+	}
+	if market.Outcomes[1] != "No" {
+		t.Fatalf("unexpected market outcome: got=%s expected=%s", market.Outcomes[1], "No")
+	}
+
+	if market.ClobTokenIds[0] != "47313021130322918142472560277231660630747146184805697892522793505853113144604" {
+		t.Fatalf("unexpected market clob token id: got=%s expected=%s", market.ClobTokenIds[0], "47313021130322918142472560277231660630747146184805697892522793505853113144604")
+	}
+	if market.ClobTokenIds[1] != "67289423425612777318091296514180935026483263988884208932357196525302151688551" {
+		t.Fatalf("unexpected market clob token id: got=%s expected=%s", market.ClobTokenIds[1], "67289423425612777318091296514180935026483263988884208932357196525302151688551")
+	}
 }
 
 func TestGetUser_Success(t *testing.T) {
