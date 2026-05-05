@@ -7,12 +7,24 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
+	"time"
+
+	"golang.org/x/time/rate"
 )
 
 type Polyapi struct {
 	BaseDataURL  string
 	BaseGammaURL string
 	HTTPClient   *http.Client
+
+	// Data API limiters
+	dataGeneralLimiter         *rate.Limiter // 1000 / 10s = 100 rps
+	dataClosedPositionsLimiter *rate.Limiter // 150 / 10s = 15 rps
+
+	// Gamma API limiters
+	gammaGeneralLimiter *rate.Limiter // 4000 / 10s = 400 rps
+	gammaMarketsLimiter *rate.Limiter // 300 / 10s = 30 rps
 }
 
 func NewPolyapi() *Polyapi {
@@ -20,11 +32,83 @@ func NewPolyapi() *Polyapi {
 		BaseDataURL:  "https://data-api.polymarket.com",
 		BaseGammaURL: "https://gamma-api.polymarket.com",
 		HTTPClient:   http.DefaultClient,
+
+		// Data API
+		dataGeneralLimiter:         rate.NewLimiter(rate.Every(time.Second/100), 100),
+		dataClosedPositionsLimiter: rate.NewLimiter(rate.Every(time.Second/15), 15),
+
+		// Gamma API
+		gammaGeneralLimiter: rate.NewLimiter(rate.Every(time.Second/400), 400),
+		gammaMarketsLimiter: rate.NewLimiter(rate.Every(time.Second/30), 30),
 	}
 }
 
+// --------------------
+// Internal helpers
+// --------------------
+
+func (c *Polyapi) doRequest(
+	ctx context.Context,
+	req *http.Request,
+) (*http.Response, error) {
+
+	limiters := c.limitersFor(req)
+
+	for _, l := range limiters {
+		if err := l.Wait(ctx); err != nil {
+			return nil, err
+		}
+	}
+
+	return c.HTTPClient.Do(req)
+}
+
+func (c *Polyapi) limitersFor(req *http.Request) []*rate.Limiter {
+	host := req.URL.Host
+	path := req.URL.Path
+
+	if strings.Contains(host, "data-api") {
+		if strings.HasPrefix(path, "/closed-positions") {
+			return []*rate.Limiter{
+				c.dataGeneralLimiter,
+				c.dataClosedPositionsLimiter,
+			}
+		}
+		return []*rate.Limiter{
+			c.dataGeneralLimiter,
+		}
+	}
+
+	if strings.Contains(host, "gamma-api") {
+		if strings.HasPrefix(path, "/markets") {
+			return []*rate.Limiter{
+				c.gammaGeneralLimiter,
+				c.gammaMarketsLimiter,
+			}
+		}
+		return []*rate.Limiter{
+			c.gammaGeneralLimiter,
+		}
+	}
+
+	return nil
+}
+
+// handleError tries to parse API error response, otherwise returns generic error with status code
+func (c *Polyapi) handleError(resp *http.Response) error {
+	var apiErr PolyError
+	if err := json.NewDecoder(resp.Body).Decode(&apiErr); err == nil && apiErr.Error() != "" {
+		return &apiErr
+	}
+
+	return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+}
+
+// --------------------
+// API methods
+// --------------------
+
 // https://docs.polymarket.com/api-reference/core/get-top-holders-for-markets?playground=open
-// https://data-api.polymarket.com/holders?limit=20&minBalance=1&market=0xfc613d67a16f3a9a10b63baa0f48cee855d49310b33643112e43f769d68b80a5
 func (c *Polyapi) GetTopHolders(ctx context.Context, market string) (*TokenHolders, error) {
 	u, err := url.Parse(c.BaseDataURL + "/holders")
 	if err != nil {
@@ -32,7 +116,7 @@ func (c *Polyapi) GetTopHolders(ctx context.Context, market string) (*TokenHolde
 	}
 
 	q := u.Query()
-	q.Set("limit", "20") // 20 is the max allowed by the API
+	q.Set("limit", "20")
 	q.Set("minBalance", "1")
 	q.Set("market", market)
 	u.RawQuery = q.Encode()
@@ -42,7 +126,7 @@ func (c *Polyapi) GetTopHolders(ctx context.Context, market string) (*TokenHolde
 		return nil, err
 	}
 
-	resp, err := c.HTTPClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +144,6 @@ func (c *Polyapi) GetTopHolders(ctx context.Context, market string) (*TokenHolde
 	return &tokenHolders, nil
 }
 
-// https://docs.polymarket.com/api-reference/core/get-top-holders-for-markets?playground=open
 // https://gamma-api.polymarket.com/markets/slug/will-the-steam-machine-cost-700-or-more-at-release
 func (c *Polyapi) GetMarketBySlug(ctx context.Context, slug string) (*Market, error) {
 	u, err := url.Parse(c.BaseGammaURL + "/markets/slug/" + slug)
@@ -73,7 +156,7 @@ func (c *Polyapi) GetMarketBySlug(ctx context.Context, slug string) (*Market, er
 		return nil, err
 	}
 
-	resp, err := c.HTTPClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +175,6 @@ func (c *Polyapi) GetMarketBySlug(ctx context.Context, slug string) (*Market, er
 }
 
 // https://docs.polymarket.com/api-reference/core/get-closed-positions-for-a-user
-// https://data-api.polymarket.com/closed-positions?limit=10&sortBy=REALIZEDPNL&sortDirection=DESC&user=0x3a6EFc8104f17068a8B08360518B0618c4e53291
 func (c *Polyapi) GetClosedPositions(ctx context.Context, user string, limit, offset int) ([]ClosedPosition, error) {
 	u, err := url.Parse(c.BaseDataURL + "/closed-positions")
 	if err != nil {
@@ -112,7 +194,7 @@ func (c *Polyapi) GetClosedPositions(ctx context.Context, user string, limit, of
 		return nil, err
 	}
 
-	resp, err := c.HTTPClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -130,9 +212,8 @@ func (c *Polyapi) GetClosedPositions(ctx context.Context, user string, limit, of
 	return positions, nil
 }
 
-// Fetch ALL closed positions (auto-pagination)
+// Auto-pagination
 func (c *Polyapi) GetAllClosedPositions(ctx context.Context, user string) ([]ClosedPosition, error) {
-	// Required range: 0 <= x <= 50
 	const limit = 50
 
 	var (
@@ -146,10 +227,8 @@ func (c *Polyapi) GetAllClosedPositions(ctx context.Context, user string) ([]Clo
 			return nil, err
 		}
 
-		// Append results
 		allPositions = append(allPositions, positions...)
 
-		// Stop condition: last page
 		if len(positions) < limit {
 			break
 		}
@@ -170,13 +249,4 @@ func (c *Polyapi) GetUser(ctx context.Context, user string) (*User, error) {
 		UserId:          user,
 		ClosedPositions: closedPositions,
 	}, nil
-}
-
-func (c *Polyapi) handleError(resp *http.Response) error {
-	var apiErr PolyError
-	if err := json.NewDecoder(resp.Body).Decode(&apiErr); err == nil && apiErr.Error() != "" {
-		return &apiErr
-	}
-
-	return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 }
