@@ -24,6 +24,43 @@ func NewPolyapi() *Polyapi {
 }
 
 // https://docs.polymarket.com/api-reference/core/get-top-holders-for-markets?playground=open
+// https://data-api.polymarket.com/holders?limit=20&minBalance=1&market=0xfc613d67a16f3a9a10b63baa0f48cee855d49310b33643112e43f769d68b80a5
+func (c *Polyapi) GetTopHolders(ctx context.Context, market string) (*TokenHolders, error) {
+	u, err := url.Parse(c.BaseDataURL + "/holders")
+	if err != nil {
+		return nil, err
+	}
+
+	q := u.Query()
+	q.Set("limit", "20") // 20 is the max allowed by the API
+	q.Set("minBalance", "1")
+	q.Set("market", market)
+	u.RawQuery = q.Encode()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, c.handleError(resp)
+	}
+
+	var tokenHolders TokenHolders
+	if err := json.NewDecoder(resp.Body).Decode(&tokenHolders); err != nil {
+		return nil, err
+	}
+
+	return &tokenHolders, nil
+}
+
+// https://docs.polymarket.com/api-reference/core/get-top-holders-for-markets?playground=open
 // https://gamma-api.polymarket.com/markets/slug/will-the-steam-machine-cost-700-or-more-at-release
 func (c *Polyapi) GetMarketBySlug(ctx context.Context, slug string) (*Market, error) {
 	u, err := url.Parse(c.BaseGammaURL + "/markets/slug/" + slug)

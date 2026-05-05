@@ -1,11 +1,32 @@
 package polyapi
 
 import (
-	"encoding/json"
-	"fmt"
 	"time"
 )
 
+// TokenHolders as returned by the Data API (https://data-api.polymarket.com/holders?limit=20&minBalance=1&market=0xfc613d67a16f3a9a10b63baa0f48cee855d49310b33643112e43f769d68b80a5)
+type TokenHolders []TokenHolderGroup
+
+type TokenHolderGroup struct {
+	Token   string   `json:"token"`
+	Holders []Holder `json:"holders"`
+}
+
+type Holder struct {
+	ProxyWallet           string  `json:"proxyWallet"`
+	Bio                   string  `json:"bio"`
+	Asset                 string  `json:"asset"`
+	Pseudonym             string  `json:"pseudonym"`
+	Amount                float64 `json:"amount"`
+	DisplayUsernamePublic bool    `json:"displayUsernamePublic"`
+	OutcomeIndex          int     `json:"outcomeIndex"`
+	Name                  string  `json:"name"`
+	ProfileImage          string  `json:"profileImage"`
+	ProfileImageOptimized string  `json:"profileImageOptimized"`
+	Verified              bool    `json:"verified"`
+}
+
+// Market as returned by the Gamma API (https://gamma-api.polymarket.com/markets/slug/will-the-steam-machine-cost-700-or-more-at-release)
 type Market struct {
 	Id           string   `json:"id"`
 	ConditionId  string   `json:"conditionId"`
@@ -20,36 +41,7 @@ type Market struct {
 	ClobTokenIdsRaw string `json:"clobTokenIds"`
 }
 
-func (m *Market) UnmarshalJSON(data []byte) error {
-	type Alias Market // prevent recursion
-
-	aux := &struct {
-		*Alias
-	}{
-		Alias: (*Alias)(m),
-	}
-
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-
-	// Parse Outcomes
-	if m.OutcomesRaw != "" {
-		if err := json.Unmarshal([]byte(m.OutcomesRaw), &m.Outcomes); err != nil {
-			return fmt.Errorf("failed to parse outcomes: %w", err)
-		}
-	}
-
-	// Parse ClobTokenIds
-	if m.ClobTokenIdsRaw != "" {
-		if err := json.Unmarshal([]byte(m.ClobTokenIdsRaw), &m.ClobTokenIds); err != nil {
-			return fmt.Errorf("failed to parse clobTokenIds: %w", err)
-		}
-	}
-
-	return nil
-}
-
+// ClosedPosition as returned by the Data API (https://data-api.polymarket.com/closed-positions?limit=10&sortBy=REALIZEDPNL&sortDirection=DESC&user=0x3a6EFc8104f17068a8B08360518B0618c4e53291)
 type ClosedPosition struct {
 	ProxyWallet     string    `json:"proxyWallet"`
 	Asset           string    `json:"asset"`
