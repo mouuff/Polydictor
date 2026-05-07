@@ -1,0 +1,15 @@
+###
+GET https://data-api.polymarket.com/v1/closed-positions
+?limit=10
+&sortBy=REALIZEDPNL
+&sortDirection=DESC
+&user=0x5669c2d70390d821291a6843e587c6500f310f13
+
+###
+GET https://gamma-api.polymarket.com/markets/slug/will-the-steam-machine-cost-700-or-more-at-release
+
+###
+GET https://data-api.polymarket.com/v1/holders
+?limit=20
+&minBalance=1
+&market=0xfc613d67a16f3a9a10b63baa0f48cee855d49310b33643112e43f769d68b80a5

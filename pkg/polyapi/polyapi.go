@@ -110,7 +110,7 @@ func (c *Polyapi) handleError(resp *http.Response) error {
 
 // https://docs.polymarket.com/api-reference/core/get-top-holders-for-markets?playground=open
 func (c *Polyapi) GetTopHolders(ctx context.Context, market string) (*[]TokenHolderGroup, error) {
-	u, err := url.Parse(c.BaseDataURL + "/holders")
+	u, err := url.Parse(c.BaseDataURL + "/v1/holders")
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +176,7 @@ func (c *Polyapi) GetMarketBySlug(ctx context.Context, slug string) (*Market, er
 
 // https://docs.polymarket.com/api-reference/core/get-closed-positions-for-a-user
 func (c *Polyapi) GetClosedPositions(ctx context.Context, user string, limit, offset int) ([]ClosedPosition, error) {
-	u, err := url.Parse(c.BaseDataURL + "/closed-positions")
+	u, err := url.Parse(c.BaseDataURL + "/v1/closed-positions")
 	if err != nil {
 		return nil, err
 	}

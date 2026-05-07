@@ -3,6 +3,7 @@ package polyflow
 import (
 	"context"
 	"fmt"
+	"log"
 	"math"
 
 	"github.com/mouuff/polydictor/pkg/polyapi"
@@ -63,6 +64,10 @@ func (o *Orchestrator) AnalyzeMarket(slug string) (*MarketAnalysis, error) {
 }
 
 func (o *Orchestrator) AnalyzeMarketOutcome(market *polyapi.Market, tokenHolders *[]polyapi.TokenHolderGroup, outcome string) (*MarketOutcomeAnalysis, error) {
+	if o.Debug {
+		log.Printf("Analyzing outcome: %s\n", outcome)
+	}
+
 	var (
 		predictionRateSum     float64
 		profitRateSum         float64
@@ -100,8 +105,8 @@ func (o *Orchestrator) AnalyzeMarketOutcome(market *polyapi.Market, tokenHolders
 		userCount++
 
 		if o.Debug {
-			fmt.Printf("User %s - Name: %s - Prediction Rate: %.2f%%, Profit Rate: %.2f%%, Profit: $%.2f\n",
-				u.UserId, holder.Pseudonym, userPredictionRate*100, userProfitRate*100, userProfit)
+			log.Printf("User %s - Name: %s - Prediction Rate: %.2f%%, Profit Rate: %.2f%%, Profit: $%.2f\n",
+				u.UserId, holder.Name, userPredictionRate*100, userProfitRate*100, userProfit)
 		}
 	}
 	var (
