@@ -5,8 +5,6 @@ import (
 )
 
 // TokenHolders as returned by the Data API (https://data-api.polymarket.com/holders?limit=20&minBalance=1&market=0xfc613d67a16f3a9a10b63baa0f48cee855d49310b33643112e43f769d68b80a5)
-type TokenHolders []TokenHolderGroup
-
 type TokenHolderGroup struct {
 	Token   string   `json:"token"`
 	Holders []Holder `json:"holders"`

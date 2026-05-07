@@ -109,7 +109,7 @@ func (c *Polyapi) handleError(resp *http.Response) error {
 // --------------------
 
 // https://docs.polymarket.com/api-reference/core/get-top-holders-for-markets?playground=open
-func (c *Polyapi) GetTopHolders(ctx context.Context, market string) (*TokenHolders, error) {
+func (c *Polyapi) GetTopHolders(ctx context.Context, market string) (*[]TokenHolderGroup, error) {
 	u, err := url.Parse(c.BaseDataURL + "/holders")
 	if err != nil {
 		return nil, err
@@ -136,7 +136,7 @@ func (c *Polyapi) GetTopHolders(ctx context.Context, market string) (*TokenHolde
 		return nil, c.handleError(resp)
 	}
 
-	var tokenHolders TokenHolders
+	var tokenHolders []TokenHolderGroup
 	if err := json.NewDecoder(resp.Body).Decode(&tokenHolders); err != nil {
 		return nil, err
 	}
