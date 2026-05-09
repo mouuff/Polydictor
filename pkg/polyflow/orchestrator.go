@@ -11,10 +11,11 @@ import (
 )
 
 type Orchestrator struct {
-	ctx   context.Context
-	api   *polyapi.Polyapi
-	db    *SQLiteStore
-	Debug bool
+	ctx           context.Context
+	api           *polyapi.Polyapi
+	db            *SQLiteStore
+	CacheDuration time.Duration
+	Debug         bool
 }
 
 type MarketOutcomeAnalysis struct {
@@ -45,10 +46,11 @@ func NewOrchestrator(dbPath string) *Orchestrator {
 	}
 
 	return &Orchestrator{
-		ctx:   context.Background(),
-		api:   polyapi.NewPolyapi(),
-		db:    db,
-		Debug: true,
+		ctx:           context.Background(),
+		api:           polyapi.NewPolyapi(),
+		db:            db,
+		CacheDuration: 24 * time.Hour,
+		Debug:         true,
 	}
 }
 
@@ -166,7 +168,7 @@ func (o *Orchestrator) GetScoredUsers(holders []polyapi.Holder) ([]*ScoredUser, 
 }
 
 func (o *Orchestrator) GetScoredUser(proxyWallet, name string) (*ScoredUser, error) {
-	u, err := o.db.GetUser(proxyWallet)
+	u, err := o.db.GetFreshUser(proxyWallet, o.CacheDuration)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user from database: %w", err)
 	}

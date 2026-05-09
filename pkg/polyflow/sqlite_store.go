@@ -81,6 +81,32 @@ func (s *SQLiteStore) SaveUser(
 	return err
 }
 
+func (s *SQLiteStore) GetFreshUser(
+	proxyWallet string,
+	maxAge time.Duration,
+) (*ScoredUser, error) {
+
+	user, err := s.GetUser(proxyWallet)
+	if err != nil {
+		return nil, err
+	}
+
+	if user == nil {
+		return nil, nil
+	}
+
+	// Delete stale users
+	if time.Since(user.LookupTime) > maxAge {
+		if err := s.DeleteUser(proxyWallet); err != nil {
+			return nil, err
+		}
+
+		return nil, nil
+	}
+
+	return user, nil
+}
+
 // ------------------------------------------------------------
 // Get user by proxy wallet
 // ------------------------------------------------------------

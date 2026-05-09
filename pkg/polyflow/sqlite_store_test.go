@@ -97,6 +97,96 @@ func TestSaveAndGetUser(t *testing.T) {
 	}
 }
 
+func TestGetFreshUserDeletesExpiredUser(t *testing.T) {
+	store := newTestStore(t)
+	defer store.Close()
+
+	user := &ScoredUser{
+		ProxyWallet:    "0xexpired",
+		Name:           "Expired User",
+		PredictionRate: 0.5,
+		ProfitRate:     1.2,
+		Profit:         100,
+		LookupTime:     time.Now().Add(-48 * time.Hour),
+	}
+
+	err := store.SaveUser(user)
+	if err != nil {
+		t.Fatalf("failed to save user: %v", err)
+	}
+
+	got, err := store.GetFreshUser(
+		user.ProxyWallet,
+		24*time.Hour,
+	)
+	if err != nil {
+		t.Fatalf("failed to get fresh user: %v", err)
+	}
+
+	if got != nil {
+		t.Fatalf("expected nil for expired user, got %+v", got)
+	}
+
+	// Ensure user was deleted
+	check, err := store.GetUser(user.ProxyWallet)
+	if err != nil {
+		t.Fatalf("failed to get deleted user: %v", err)
+	}
+
+	if check != nil {
+		t.Fatalf("expected user to be deleted")
+	}
+}
+
+func TestGetFreshUserReturnsFreshUser(t *testing.T) {
+	store := newTestStore(t)
+	defer store.Close()
+
+	user := &ScoredUser{
+		ProxyWallet:    "0xfresh",
+		Name:           "Fresh User",
+		PredictionRate: 0.82,
+		ProfitRate:     1.45,
+		Profit:         250,
+		LookupTime:     time.Now().Add(-1 * time.Hour),
+	}
+
+	err := store.SaveUser(user)
+	if err != nil {
+		t.Fatalf("failed to save user: %v", err)
+	}
+
+	got, err := store.GetFreshUser(
+		user.ProxyWallet,
+		24*time.Hour,
+	)
+	if err != nil {
+		t.Fatalf("failed to get fresh user: %v", err)
+	}
+
+	if got == nil {
+		t.Fatal("expected fresh user, got nil")
+	}
+
+	if got.ProxyWallet != user.ProxyWallet {
+		t.Errorf(
+			"unexpected proxy wallet: got %s want %s",
+			got.ProxyWallet,
+			user.ProxyWallet,
+		)
+	}
+
+	// Ensure user still exists in DB
+	check, err := store.GetUser(user.ProxyWallet)
+	if err != nil {
+		t.Fatalf("failed to get user: %v", err)
+	}
+
+	if check == nil {
+		t.Fatal("expected user to still exist in DB")
+	}
+}
+
 func TestGetUserNotFound(t *testing.T) {
 	store := newTestStore(t)
 	defer store.Close()
