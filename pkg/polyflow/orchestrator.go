@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"time"
 
 	"github.com/mouuff/polydictor/pkg/polyapi"
 )
@@ -25,6 +26,15 @@ type MarketOutcomeAnalysis struct {
 
 type MarketAnalysis struct {
 	Outcomes []MarketOutcomeAnalysis
+}
+
+type EnrichedHolder struct {
+	polyapi.Holder
+	polyapi.User
+	PredictionRate float64
+	ProfitRate     float64
+	Profit         float64
+	LookupTime     time.Time
 }
 
 func NewOrchestrator() *Orchestrator {
@@ -82,15 +92,15 @@ func (o *Orchestrator) AnalyzeMarketOutcome(market *polyapi.Market, tokenHolders
 		return nil, fmt.Errorf("failed to get holders for outcome: %w", err)
 	}
 
-	for _, holder := range holders {
-		u, err := o.api.GetUser(o.ctx, holder.ProxyWallet)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get user info for wallet %s: %w", holder.ProxyWallet, err)
-		}
+	enrichedHolders, err := o.GetEnrichedHolders(holders)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get enriched holders: %w", err)
+	}
 
-		userPredictionRate := GetPredictionRate(u)
-		userProfitRate := GetProfitRate(u)
-		userProfit := GetProfit(u)
+	for _, enrichedHolder := range enrichedHolders {
+		userPredictionRate := enrichedHolder.PredictionRate
+		userProfitRate := enrichedHolder.ProfitRate
+		userProfit := enrichedHolder.Profit
 
 		predictionRateSum += userPredictionRate
 		profitRateSum += userProfitRate
@@ -103,11 +113,6 @@ func (o *Orchestrator) AnalyzeMarketOutcome(market *polyapi.Market, tokenHolders
 		totalProfitWeight += weight
 
 		userCount++
-
-		if o.Debug {
-			log.Printf("User %s - Name: %s - Prediction Rate: %.2f%%, Profit Rate: %.2f%%, Profit: $%.2f\n",
-				u.UserId, holder.Name, userPredictionRate*100, userProfitRate*100, userProfit)
-		}
 	}
 	var (
 		avgPredictionRate  float64
@@ -131,4 +136,33 @@ func (o *Orchestrator) AnalyzeMarketOutcome(market *polyapi.Market, tokenHolders
 		PredictionRate:     avgPredictionRate,
 		Profit:             profit,
 	}, nil
+}
+
+func (o *Orchestrator) GetEnrichedHolders(holders []polyapi.Holder) ([]*EnrichedHolder, error) {
+	var enrichedHolders []*EnrichedHolder
+
+	for _, holder := range holders {
+		u, err := o.api.GetUser(o.ctx, holder.ProxyWallet)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get user info for wallet %s: %w", holder.ProxyWallet, err)
+		}
+
+		entry := &EnrichedHolder{
+			Holder:         holder,
+			User:           *u,
+			LookupTime:     time.Now(),
+			PredictionRate: GetPredictionRate(u),
+			ProfitRate:     GetProfitRate(u),
+			Profit:         GetProfit(u),
+		}
+
+		enrichedHolders = append(enrichedHolders, entry)
+
+		if o.Debug {
+			log.Printf("User %s - Name: %s - Prediction Rate: %.2f%%, Profit Rate: %.2f%%, Profit: $%.2f\n",
+				u.UserId, holder.Name, entry.PredictionRate*100, entry.ProfitRate*100, entry.Profit)
+		}
+	}
+
+	return enrichedHolders, nil
 }

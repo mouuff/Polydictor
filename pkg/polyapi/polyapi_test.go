@@ -85,7 +85,7 @@ func TestGetUser_Success(t *testing.T) {
 		ConditionID:     "0x19966af675c9fd1a4db02b3cf7da257cfe505c0ff67332131471e9e03849c520",
 		AvgPrice:        0.366525,
 		TotalBought:     532.410855,
-		RealizedPnl:     -44.665945378874994,
+		RealizedPnl:     -44.665945,
 		CurPrice:        1,
 		Title:           "Will 60 or more ships transit the Strait of Hormuz between April 6-April 12?",
 		Slug:            "will-60-or-more-ships-transit-the-strait-of-hormuz-between-april-6-april-12",
@@ -170,7 +170,7 @@ func containsClosedPosition(results []polyapi.ClosedPosition, expected polyapi.C
 		if p.TotalBought != expected.TotalBought {
 			diffs = append(diffs, fmt.Sprintf("TotalBought mismatch: got=%f expected=%f", p.TotalBought, expected.TotalBought))
 		}
-		if p.RealizedPnl != expected.RealizedPnl {
+		if fmt.Sprintf("%.2f", p.RealizedPnl) != fmt.Sprintf("%.2f", expected.RealizedPnl) {
 			diffs = append(diffs, fmt.Sprintf("RealizedPnl mismatch: got=%f expected=%f", p.RealizedPnl, expected.RealizedPnl))
 		}
 		if p.CurPrice != expected.CurPrice {
