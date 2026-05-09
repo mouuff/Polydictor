@@ -24,6 +24,7 @@ type MarketOutcomeAnalysis struct {
 	WeightedProfitRate float64
 	PredictionRate     float64
 	Profit             float64
+	LookupTime         time.Time
 }
 
 type MarketAnalysis struct {
@@ -144,6 +145,7 @@ func (o *Orchestrator) AnalyzeMarketOutcome(market *polyapi.Market, tokenHolders
 		WeightedProfitRate: weightedProfitRate,
 		PredictionRate:     avgPredictionRate,
 		Profit:             profit,
+		LookupTime:         time.Now(),
 	}, nil
 }
 
