@@ -79,8 +79,8 @@ func (c *Polyapi) limitersFor(req *http.Request) []*rate.Limiter {
 	if strings.Contains(host, "data-api") {
 		if strings.HasSuffix(path, "/closed-positions") {
 			return []*rate.Limiter{
-				c.dataGeneralLimiter,
 				c.dataClosedPositionsLimiter,
+				c.dataGeneralLimiter,
 			}
 		}
 		return []*rate.Limiter{
@@ -91,8 +91,8 @@ func (c *Polyapi) limitersFor(req *http.Request) []*rate.Limiter {
 	if strings.Contains(host, "gamma-api") {
 		if strings.HasSuffix(path, "/markets") {
 			return []*rate.Limiter{
-				c.gammaGeneralLimiter,
 				c.gammaMarketsLimiter,
+				c.gammaGeneralLimiter,
 			}
 		}
 		return []*rate.Limiter{
