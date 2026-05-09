@@ -25,6 +25,12 @@ func (m *Market) UnmarshalJSON(data []byte) error {
 		}
 	}
 
+	if m.OutcomePricesRaw != "" {
+		if err := json.Unmarshal([]byte(m.OutcomePricesRaw), &m.OutcomePrices); err != nil {
+			return fmt.Errorf("failed to parse outcome prices: %w", err)
+		}
+	}
+
 	// Parse ClobTokenIds
 	if m.ClobTokenIdsRaw != "" {
 		if err := json.Unmarshal([]byte(m.ClobTokenIdsRaw), &m.ClobTokenIds); err != nil {

@@ -26,17 +26,19 @@ type Holder struct {
 
 // Market as returned by the Gamma API (https://gamma-api.polymarket.com/markets/slug/will-the-steam-machine-cost-700-or-more-at-release)
 type Market struct {
-	Id           string   `json:"id"`
-	ConditionId  string   `json:"conditionId"`
-	Slug         string   `json:"slug"`
-	Description  string   `json:"description"`
-	Question     string   `json:"question"`
-	Outcomes     []string `json:"-"`
-	ClobTokenIds []string `json:"-"`
+	Id            string   `json:"id"`
+	ConditionId   string   `json:"conditionId"`
+	Slug          string   `json:"slug"`
+	Description   string   `json:"description"`
+	Question      string   `json:"question"`
+	OutcomePrices []string `json:"-"`
+	Outcomes      []string `json:"-"`
+	ClobTokenIds  []string `json:"-"`
 
 	// raw fields from API (JSON-encoded strings)
-	OutcomesRaw     string `json:"outcomes"`
-	ClobTokenIdsRaw string `json:"clobTokenIds"`
+	OutcomesRaw      string `json:"outcomes"`
+	ClobTokenIdsRaw  string `json:"clobTokenIds"`
+	OutcomePricesRaw string `json:"outcomePrices"`
 }
 
 // ClosedPosition as returned by the Data API (https://data-api.polymarket.com/closed-positions?limit=10&sortBy=REALIZEDPNL&sortDirection=DESC&user=0x3a6EFc8104f17068a8B08360518B0618c4e53291)
