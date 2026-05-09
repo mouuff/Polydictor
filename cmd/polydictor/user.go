@@ -12,7 +12,8 @@ import (
 type UserCmd struct {
 	flagSet *flag.FlagSet
 
-	id string
+	id     string
+	dbPath string
 }
 
 // Name gets the name of the command
@@ -24,6 +25,7 @@ func (cmd *UserCmd) Name() string {
 func (cmd *UserCmd) Init(args []string) error {
 	cmd.flagSet = flag.NewFlagSet(cmd.Name(), flag.ExitOnError)
 	cmd.flagSet.StringVar(&cmd.id, "id", "", "user id (required)")
+	cmd.flagSet.StringVar(&cmd.dbPath, "db", "./store.db", "database path")
 	return cmd.flagSet.Parse(args)
 }
 
@@ -34,7 +36,12 @@ func (cmd *UserCmd) Run() error {
 		return errors.New("-id parameter required")
 	}
 
-	var orchestrator = polyflow.NewOrchestrator()
+	if cmd.dbPath == "" {
+		log.Println("Please pass the database path with -db")
+		return errors.New("-db parameter required")
+	}
+
+	var orchestrator = polyflow.NewOrchestrator(cmd.dbPath)
 
 	user, err := orchestrator.GetScoredUser(cmd.id, "")
 	if err != nil {

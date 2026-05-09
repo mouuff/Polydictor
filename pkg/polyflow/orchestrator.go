@@ -13,6 +13,7 @@ import (
 type Orchestrator struct {
 	ctx   context.Context
 	api   *polyapi.Polyapi
+	db    *SQLiteStore
 	Debug bool
 }
 
@@ -37,10 +38,16 @@ type ScoredUser struct {
 	LookupTime     time.Time
 }
 
-func NewOrchestrator() *Orchestrator {
+func NewOrchestrator(dbPath string) *Orchestrator {
+	db, err := NewSQLiteStore(dbPath)
+	if err != nil {
+		log.Fatalf("Failed to initialize SQLite store: %v", err)
+	}
+
 	return &Orchestrator{
 		ctx:   context.Background(),
 		api:   polyapi.NewPolyapi(),
+		db:    db,
 		Debug: true,
 	}
 }
@@ -159,6 +166,15 @@ func (o *Orchestrator) GetScoredUsers(holders []polyapi.Holder) ([]*ScoredUser, 
 }
 
 func (o *Orchestrator) GetScoredUser(proxyWallet, name string) (*ScoredUser, error) {
+	u, err := o.db.GetUser(proxyWallet)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user from database: %w", err)
+	}
+
+	if u != nil {
+		return u, nil
+	}
+
 	closedPositions, err := o.api.GetAllClosedPositions(o.ctx, proxyWallet)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user info for wallet %s: %w", proxyWallet, err)
@@ -171,6 +187,10 @@ func (o *Orchestrator) GetScoredUser(proxyWallet, name string) (*ScoredUser, err
 		ProfitRate:     GetProfitRate(closedPositions),
 		Profit:         GetProfit(closedPositions),
 		LookupTime:     time.Now(),
+	}
+
+	if err := o.db.SaveUser(entry); err != nil {
+		return nil, fmt.Errorf("failed to save user to database: %w", err)
 	}
 
 	return entry, nil

@@ -14,6 +14,7 @@ type AnalyzeCmd struct {
 	flagSet *flag.FlagSet
 
 	marketId string
+	dbPath   string
 }
 
 // Name gets the name of the command
@@ -25,6 +26,7 @@ func (cmd *AnalyzeCmd) Name() string {
 func (cmd *AnalyzeCmd) Init(args []string) error {
 	cmd.flagSet = flag.NewFlagSet(cmd.Name(), flag.ExitOnError)
 	cmd.flagSet.StringVar(&cmd.marketId, "slug", "", "market slug (required)")
+	cmd.flagSet.StringVar(&cmd.dbPath, "db", "./store.db", "database path")
 	return cmd.flagSet.Parse(args)
 }
 
@@ -35,7 +37,12 @@ func (cmd *AnalyzeCmd) Run() error {
 		return errors.New("-slug parameter required")
 	}
 
-	orchestrator := polyflow.NewOrchestrator()
+	if cmd.dbPath == "" {
+		log.Println("Please pass the database path with -db")
+		return errors.New("-db parameter required")
+	}
+
+	orchestrator := polyflow.NewOrchestrator(cmd.dbPath)
 	analysis, err := orchestrator.AnalyzeMarket(cmd.marketId)
 	if err != nil {
 		return err
