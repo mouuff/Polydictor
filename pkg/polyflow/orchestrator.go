@@ -88,9 +88,9 @@ func (o *Orchestrator) AnalyzeMarketOutcome(market *polyapi.Market, tokenHolders
 			return nil, fmt.Errorf("failed to get user info for wallet %s: %w", holder.ProxyWallet, err)
 		}
 
-		userPredictionRate := u.GetPredictionRate()
-		userProfitRate := u.GetProfitRate()
-		userProfit := u.GetProfit()
+		userPredictionRate := GetPredictionRate(u)
+		userProfitRate := GetProfitRate(u)
+		userProfit := GetProfit(u)
 
 		predictionRateSum += userPredictionRate
 		profitRateSum += userProfitRate

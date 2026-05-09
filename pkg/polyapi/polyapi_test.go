@@ -103,11 +103,6 @@ func TestGetUser_Success(t *testing.T) {
 	if !ok {
 		t.Fatalf("position mismatch for slug=%s:\n%s", expected.Slug, diff)
 	}
-
-	x := user.GetPredictionRate()
-	if x <= 0 || x > 1 {
-		t.Fatalf("unexpected prediction rate: %f", x)
-	}
 }
 
 func TestGetClosedPositions_Success(t *testing.T) {

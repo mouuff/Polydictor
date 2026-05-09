@@ -39,6 +39,12 @@ type Market struct {
 	ClobTokenIdsRaw string `json:"clobTokenIds"`
 }
 
+// User
+type User struct {
+	UserId          string
+	ClosedPositions []ClosedPosition
+}
+
 // ClosedPosition as returned by the Data API (https://data-api.polymarket.com/closed-positions?limit=10&sortBy=REALIZEDPNL&sortDirection=DESC&user=0x3a6EFc8104f17068a8B08360518B0618c4e53291)
 type ClosedPosition struct {
 	ProxyWallet     string    `json:"proxyWallet"`
