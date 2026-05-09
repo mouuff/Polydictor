@@ -1,0 +1,243 @@
+package polyflow
+
+import (
+	"testing"
+
+	"github.com/mouuff/polydictor/pkg/polyapi"
+)
+
+func TestGetPredictionRate(t *testing.T) {
+	positions := []polyapi.ClosedPosition{
+		{RealizedPnl: 100},
+		{RealizedPnl: -50},
+		{RealizedPnl: 20},
+		{RealizedPnl: 0},
+	}
+
+	got := GetPredictionRate(positions)
+
+	expected := 0.5 // 2 profitable out of 4
+
+	if got != expected {
+		t.Fatalf(
+			"unexpected prediction rate: got %f want %f",
+			got,
+			expected,
+		)
+	}
+}
+
+func TestGetPredictionRateEmpty(t *testing.T) {
+	got := GetPredictionRate(nil)
+
+	if got != 0 {
+		t.Fatalf(
+			"expected 0 prediction rate, got %f",
+			got,
+		)
+	}
+}
+
+func TestGetProfitRate(t *testing.T) {
+	positions := []polyapi.ClosedPosition{
+		{
+			RealizedPnl: 100,
+			TotalBought: 10,
+			AvgPrice:    2,
+		},
+		{
+			RealizedPnl: -50,
+			TotalBought: 5,
+			AvgPrice:    4,
+		},
+	}
+
+	got := GetProfitRate(positions)
+
+	// net profit = 50
+	// total investment = 40
+	// 50 / 40 = 1.25
+	expected := 1.25
+
+	if got != expected {
+		t.Fatalf(
+			"unexpected profit rate: got %f want %f",
+			got,
+			expected,
+		)
+	}
+}
+
+func TestGetProfitRateZeroInvestment(t *testing.T) {
+	positions := []polyapi.ClosedPosition{
+		{
+			RealizedPnl: 100,
+		},
+	}
+
+	got := GetProfitRate(positions)
+
+	if got != 0 {
+		t.Fatalf(
+			"expected 0 profit rate, got %f",
+			got,
+		)
+	}
+}
+
+func TestGetProfit(t *testing.T) {
+	positions := []polyapi.ClosedPosition{
+		{RealizedPnl: 100},
+		{RealizedPnl: -30},
+		{RealizedPnl: 50},
+	}
+
+	got := GetProfit(positions)
+
+	expected := 120.0
+
+	if got != expected {
+		t.Fatalf(
+			"unexpected profit: got %f want %f",
+			got,
+			expected,
+		)
+	}
+}
+
+func TestGetProfitEmpty(t *testing.T) {
+	got := GetProfit(nil)
+
+	if got != 0 {
+		t.Fatalf(
+			"expected 0 profit, got %f",
+			got,
+		)
+	}
+}
+
+func TestGetOutcomeIndexForOutcome(t *testing.T) {
+	market := &polyapi.Market{
+		Outcomes: []string{
+			"YES",
+			"NO",
+			"MAYBE",
+		},
+	}
+
+	got, err := GetOutcomeIndexForOutcome(market, "NO")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := 1
+
+	if got != expected {
+		t.Fatalf(
+			"unexpected outcome index: got %d want %d",
+			got,
+			expected,
+		)
+	}
+}
+
+func TestGetOutcomeIndexForOutcomeNotFound(t *testing.T) {
+	market := &polyapi.Market{
+		Outcomes: []string{
+			"YES",
+			"NO",
+		},
+	}
+
+	_, err := GetOutcomeIndexForOutcome(market, "MAYBE")
+
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestGetHoldersForOutcome(t *testing.T) {
+	market := &polyapi.Market{
+		Outcomes: []string{
+			"YES",
+			"NO",
+		},
+		ClobTokenIds: []string{
+			"token_yes",
+			"token_no",
+		},
+	}
+
+	tokenHolders := []polyapi.TokenHolderGroup{
+		{
+			Holders: []polyapi.Holder{
+				{
+					Asset: "token_yes",
+				},
+				{
+					Asset: "token_no",
+				},
+			},
+		},
+		{
+			Holders: []polyapi.Holder{
+				{
+					Asset: "token_yes",
+				},
+			},
+		},
+	}
+
+	got, err := GetHoldersForOutcome(
+		market,
+		&tokenHolders,
+		"YES",
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := 2
+
+	if len(got) != expected {
+		t.Fatalf(
+			"unexpected holder count: got %d want %d",
+			len(got),
+			expected,
+		)
+	}
+
+	for _, h := range got {
+		if h.Asset != "token_yes" {
+			t.Fatalf(
+				"unexpected holder asset: got %s",
+				h.Asset,
+			)
+		}
+	}
+}
+
+func TestGetHoldersForOutcomeInvalidOutcome(t *testing.T) {
+	market := &polyapi.Market{
+		Outcomes: []string{
+			"YES",
+			"NO",
+		},
+		ClobTokenIds: []string{
+			"token_yes",
+			"token_no",
+		},
+	}
+
+	tokenHolders := []polyapi.TokenHolderGroup{}
+
+	_, err := GetHoldersForOutcome(
+		market,
+		&tokenHolders,
+		"INVALID",
+	)
+
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
