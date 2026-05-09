@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"golang.org/x/time/rate"
 )
@@ -33,13 +32,23 @@ func NewPolyapi() *Polyapi {
 		BaseGammaURL: "https://gamma-api.polymarket.com",
 		HTTPClient:   http.DefaultClient,
 
+		// General API limit is 15,000 req / 10s
+		// But we likely wont hit that because of our calling patterns
+		// We may need to add this in the future if we get throttled.
+
 		// Data API
-		dataGeneralLimiter:         rate.NewLimiter(rate.Every(time.Second/100), 100),
-		dataClosedPositionsLimiter: rate.NewLimiter(rate.Every(time.Second/15), 15),
+		// 1,000 req / 10s
+		dataGeneralLimiter: rate.NewLimiter(rate.Limit(100), 1000),
+
+		// 150 req / 10s
+		dataClosedPositionsLimiter: rate.NewLimiter(rate.Limit(15), 150),
 
 		// Gamma API
-		gammaGeneralLimiter: rate.NewLimiter(rate.Every(time.Second/400), 400),
-		gammaMarketsLimiter: rate.NewLimiter(rate.Every(time.Second/30), 30),
+		// 4,000 req / 10s
+		gammaGeneralLimiter: rate.NewLimiter(rate.Limit(400), 4000),
+
+		// 300 req / 10s
+		gammaMarketsLimiter: rate.NewLimiter(rate.Limit(30), 300),
 	}
 }
 
@@ -68,7 +77,7 @@ func (c *Polyapi) limitersFor(req *http.Request) []*rate.Limiter {
 	path := req.URL.Path
 
 	if strings.Contains(host, "data-api") {
-		if strings.HasPrefix(path, "/closed-positions") {
+		if strings.HasSuffix(path, "/closed-positions") {
 			return []*rate.Limiter{
 				c.dataGeneralLimiter,
 				c.dataClosedPositionsLimiter,
@@ -80,7 +89,7 @@ func (c *Polyapi) limitersFor(req *http.Request) []*rate.Limiter {
 	}
 
 	if strings.Contains(host, "gamma-api") {
-		if strings.HasPrefix(path, "/markets") {
+		if strings.HasSuffix(path, "/markets") {
 			return []*rate.Limiter{
 				c.gammaGeneralLimiter,
 				c.gammaMarketsLimiter,
