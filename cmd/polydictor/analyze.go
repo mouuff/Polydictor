@@ -9,27 +9,27 @@ import (
 	"github.com/mouuff/polydictor/pkg/polyflow"
 )
 
-// This command is used to predict a market
-type PredictCmd struct {
+// This command is used to analyze a market
+type AnalyzeCmd struct {
 	flagSet *flag.FlagSet
 
 	marketId string
 }
 
 // Name gets the name of the command
-func (cmd *PredictCmd) Name() string {
-	return "predict"
+func (cmd *AnalyzeCmd) Name() string {
+	return "analyze"
 }
 
 // Init initializes the command
-func (cmd *PredictCmd) Init(args []string) error {
+func (cmd *AnalyzeCmd) Init(args []string) error {
 	cmd.flagSet = flag.NewFlagSet(cmd.Name(), flag.ExitOnError)
 	cmd.flagSet.StringVar(&cmd.marketId, "slug", "", "market slug (required)")
 	return cmd.flagSet.Parse(args)
 }
 
 // Run runs the command
-func (cmd *PredictCmd) Run() error {
+func (cmd *AnalyzeCmd) Run() error {
 	if cmd.marketId == "" {
 		log.Println("Please pass the market slug with -slug")
 		return errors.New("-slug parameter required")
