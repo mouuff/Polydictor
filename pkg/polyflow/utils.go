@@ -25,11 +25,15 @@ func GetHoldersForOutcome(market *polyapi.Market, tokenHolders *[]polyapi.TokenH
 
 	token := market.ClobTokenIds[outcomeIndex]
 
+	var holders []polyapi.Holder
+
 	for _, tokenHolder := range *tokenHolders {
-		if tokenHolder.Token == token {
-			return tokenHolder.Holders, nil
+		for _, holder := range tokenHolder.Holders {
+			if holder.Asset == token {
+				holders = append(holders, holder)
+			}
 		}
 	}
 
-	return nil, fmt.Errorf("token holders not found for token: %s", token)
+	return holders, nil
 }

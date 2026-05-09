@@ -77,7 +77,7 @@ func (o *Orchestrator) AnalyzeMarketOutcome(market *polyapi.Market, tokenHolders
 		userCount             int
 	)
 
-	holders, err := GetHoldersForOutcome(market, tokenHolders, market.Outcomes[0])
+	holders, err := GetHoldersForOutcome(market, tokenHolders, outcome)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get holders for outcome: %w", err)
 	}
