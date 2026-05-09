@@ -28,9 +28,9 @@ type MarketAnalysis struct {
 	Outcomes []MarketOutcomeAnalysis
 }
 
-type EnrichedHolder struct {
-	polyapi.Holder
-	polyapi.User
+type ScoredUser struct {
+	ProxyWallet    string
+	Name           string
 	PredictionRate float64
 	ProfitRate     float64
 	Profit         float64
@@ -92,15 +92,15 @@ func (o *Orchestrator) AnalyzeMarketOutcome(market *polyapi.Market, tokenHolders
 		return nil, fmt.Errorf("failed to get holders for outcome: %w", err)
 	}
 
-	enrichedHolders, err := o.GetEnrichedHolders(holders)
+	scoredUsers, err := o.GetScoredUsers(holders)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get enriched holders: %w", err)
+		return nil, fmt.Errorf("failed to get scored users: %w", err)
 	}
 
-	for _, enrichedHolder := range enrichedHolders {
-		userPredictionRate := enrichedHolder.PredictionRate
-		userProfitRate := enrichedHolder.ProfitRate
-		userProfit := enrichedHolder.Profit
+	for _, scoredUser := range scoredUsers {
+		userPredictionRate := scoredUser.PredictionRate
+		userProfitRate := scoredUser.ProfitRate
+		userProfit := scoredUser.Profit
 
 		predictionRateSum += userPredictionRate
 		profitRateSum += userProfitRate
@@ -138,31 +138,40 @@ func (o *Orchestrator) AnalyzeMarketOutcome(market *polyapi.Market, tokenHolders
 	}, nil
 }
 
-func (o *Orchestrator) GetEnrichedHolders(holders []polyapi.Holder) ([]*EnrichedHolder, error) {
-	var enrichedHolders []*EnrichedHolder
+func (o *Orchestrator) GetScoredUsers(holders []polyapi.Holder) ([]*ScoredUser, error) {
+	var scoredUsers []*ScoredUser
 
 	for _, holder := range holders {
-		u, err := o.api.GetUser(o.ctx, holder.ProxyWallet)
+		entry, err := o.GetScoredUser(holder.ProxyWallet, holder.Name)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get user info for wallet %s: %w", holder.ProxyWallet, err)
+			return nil, fmt.Errorf("failed to get scored user for wallet %s: %w", holder.ProxyWallet, err)
 		}
 
-		entry := &EnrichedHolder{
-			Holder:         holder,
-			User:           *u,
-			LookupTime:     time.Now(),
-			PredictionRate: GetPredictionRate(u),
-			ProfitRate:     GetProfitRate(u),
-			Profit:         GetProfit(u),
-		}
-
-		enrichedHolders = append(enrichedHolders, entry)
+		scoredUsers = append(scoredUsers, entry)
 
 		if o.Debug {
 			log.Printf("User %s - Name: %s - Prediction Rate: %.2f%%, Profit Rate: %.2f%%, Profit: $%.2f\n",
-				u.UserId, holder.Name, entry.PredictionRate*100, entry.ProfitRate*100, entry.Profit)
+				holder.ProxyWallet, holder.Name, entry.PredictionRate*100, entry.ProfitRate*100, entry.Profit)
 		}
 	}
 
-	return enrichedHolders, nil
+	return scoredUsers, nil
+}
+
+func (o *Orchestrator) GetScoredUser(proxyWallet, name string) (*ScoredUser, error) {
+	closedPositions, err := o.api.GetAllClosedPositions(o.ctx, proxyWallet)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user info for wallet %s: %w", proxyWallet, err)
+	}
+
+	entry := &ScoredUser{
+		ProxyWallet:    proxyWallet,
+		Name:           name,
+		PredictionRate: GetPredictionRate(closedPositions),
+		ProfitRate:     GetProfitRate(closedPositions),
+		Profit:         GetProfit(closedPositions),
+		LookupTime:     time.Now(),
+	}
+
+	return entry, nil
 }

@@ -247,15 +247,3 @@ func (c *Polyapi) GetAllClosedPositions(ctx context.Context, user string) ([]Clo
 
 	return allPositions, nil
 }
-
-func (c *Polyapi) GetUser(ctx context.Context, user string) (*User, error) {
-	closedPositions, err := c.GetAllClosedPositions(ctx, user)
-	if err != nil {
-		return nil, err
-	}
-
-	return &User{
-		UserId:          user,
-		ClosedPositions: closedPositions,
-	}, nil
-}

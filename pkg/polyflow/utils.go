@@ -6,11 +6,11 @@ import (
 	"github.com/mouuff/polydictor/pkg/polyapi"
 )
 
-func GetPredictionRate(u *polyapi.User) float64 {
+func GetPredictionRate(p []polyapi.ClosedPosition) float64 {
 	var totalPositions float64
 	var profitablePositions float64
 
-	for _, p := range u.ClosedPositions {
+	for _, p := range p {
 		if p.RealizedPnl > 0 {
 			profitablePositions += 1
 		}
@@ -25,11 +25,11 @@ func GetPredictionRate(u *polyapi.User) float64 {
 	return profitablePositions / totalPositions
 }
 
-func GetProfitRate(u *polyapi.User) float64 {
+func GetProfitRate(p []polyapi.ClosedPosition) float64 {
 	var netProfit float64
 	var totalInvestment float64
 
-	for _, p := range u.ClosedPositions {
+	for _, p := range p {
 		netProfit += p.RealizedPnl
 		totalInvestment += p.TotalBought * p.AvgPrice
 	}
@@ -41,10 +41,10 @@ func GetProfitRate(u *polyapi.User) float64 {
 	return netProfit / totalInvestment
 }
 
-func GetProfit(u *polyapi.User) float64 {
+func GetProfit(p []polyapi.ClosedPosition) float64 {
 	var netProfit float64
 
-	for _, p := range u.ClosedPositions {
+	for _, p := range p {
 		netProfit += p.RealizedPnl
 	}
 

@@ -66,13 +66,13 @@ func TestGetMarketBySlug_Success(t *testing.T) {
 func TestGetUser_Success(t *testing.T) {
 	client := polyapi.NewPolyapi()
 
-	user, err := client.GetUser(context.Background(), "0x3a6efc8104f17068a8b08360518b0618c4e53291")
+	res, err := client.GetAllClosedPositions(context.Background(), "0x3a6efc8104f17068a8b08360518b0618c4e53291")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if len(user.ClosedPositions) < 9 {
-		t.Fatalf("expected at least 9 result, got %d", len(user.ClosedPositions))
+	if len(res) < 9 {
+		t.Fatalf("expected at least 9 result, got %d", len(res))
 	}
 	endDate, err := time.Parse(time.RFC3339, "2026-04-12T00:00:00Z")
 	if err != nil {
@@ -99,7 +99,7 @@ func TestGetUser_Success(t *testing.T) {
 		Timestamp:       1775754855,
 	}
 
-	ok, diff := containsClosedPosition(user.ClosedPositions, expected)
+	ok, diff := containsClosedPosition(res, expected)
 	if !ok {
 		t.Fatalf("position mismatch for slug=%s:\n%s", expected.Slug, diff)
 	}

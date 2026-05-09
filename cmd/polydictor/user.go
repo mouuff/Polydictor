@@ -1,12 +1,10 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"flag"
 	"log"
 
-	"github.com/mouuff/polydictor/pkg/polyapi"
 	"github.com/mouuff/polydictor/pkg/polyflow"
 )
 
@@ -36,16 +34,16 @@ func (cmd *UserCmd) Run() error {
 		return errors.New("-id parameter required")
 	}
 
-	var ctx = context.Background()
-	var polyapi = polyapi.NewPolyapi()
-	user, err := polyapi.GetUser(ctx, cmd.id)
+	var orchestrator = polyflow.NewOrchestrator()
+
+	user, err := orchestrator.GetScoredUser(cmd.id, "")
 	if err != nil {
 		return err
 	}
 
-	log.Printf("User ID: %s\n", user.UserId)
-	log.Printf("Prediction Rate: %.2f%%\n", polyflow.GetPredictionRate(user)*100)
-	log.Printf("Profit Rate: %.2f%%\n", polyflow.GetProfitRate(user)*100)
-	log.Printf("Net Profit: %.2f USD\n", polyflow.GetProfit(user))
+	log.Printf("User ID: %s\n", user.ProxyWallet)
+	log.Printf("Prediction Rate: %.2f%%\n", user.PredictionRate*100)
+	log.Printf("Profit Rate: %.2f%%\n", user.ProfitRate*100)
+	log.Printf("Net Profit: %.2f USD\n", user.Profit)
 	return nil
 }
