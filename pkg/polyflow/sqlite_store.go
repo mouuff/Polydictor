@@ -81,11 +81,7 @@ func (s *SQLiteStore) SaveUser(
 	return err
 }
 
-func (s *SQLiteStore) GetFreshUser(
-	proxyWallet string,
-	maxAge time.Duration,
-) (*ScoredUser, error) {
-
+func (s *SQLiteStore) GetFreshUser(proxyWallet string, maxAge time.Duration) (*ScoredUser, error) {
 	user, err := s.GetUser(proxyWallet)
 	if err != nil {
 		return nil, err
