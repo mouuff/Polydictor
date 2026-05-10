@@ -2,6 +2,7 @@ package polyflow
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/mouuff/polydictor/pkg/polyapi"
 )
@@ -68,6 +69,10 @@ func GetHoldersForOutcome(market *polyapi.Market, tokenHolders *[]polyapi.TokenH
 		return nil, fmt.Errorf("failed to get outcome index: %w", err)
 	}
 
+	if len(market.ClobTokenIds) <= outcomeIndex {
+		return nil, fmt.Errorf("outcome index mismatch: %s", outcome)
+	}
+
 	token := market.ClobTokenIds[outcomeIndex]
 
 	var holders []polyapi.Holder
@@ -81,4 +86,23 @@ func GetHoldersForOutcome(market *polyapi.Market, tokenHolders *[]polyapi.TokenH
 	}
 
 	return holders, nil
+}
+
+func GetPriceForOutcome(market *polyapi.Market, outcome string) (float64, error) {
+	outcomeIndex, err := GetOutcomeIndexForOutcome(market, outcome)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get outcome index: %w", err)
+	}
+
+	if len(market.OutcomePrices) <= outcomeIndex {
+		return 0, fmt.Errorf("outcome index mismatch: %s", outcome)
+	}
+
+	priceString := market.OutcomePrices[outcomeIndex]
+	priceFloat, err := strconv.ParseFloat(priceString, 64)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse price: %w", err)
+	}
+
+	return priceFloat, nil
 }

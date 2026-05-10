@@ -241,3 +241,84 @@ func TestGetHoldersForOutcomeInvalidOutcome(t *testing.T) {
 		t.Fatal("expected error, got nil")
 	}
 }
+
+func TestGetPriceForOutcome(t *testing.T) {
+	market := &polyapi.Market{
+		Outcomes: []string{
+			"YES",
+			"NO",
+		},
+		OutcomePrices: []string{
+			"0.73",
+			"0.27",
+		},
+	}
+
+	got, err := GetPriceForOutcome(market, "YES")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := 0.73
+
+	if got != expected {
+		t.Fatalf(
+			"unexpected price: got %f want %f",
+			got,
+			expected,
+		)
+	}
+}
+
+func TestGetPriceForOutcomeNotFound(t *testing.T) {
+	market := &polyapi.Market{
+		Outcomes: []string{
+			"YES",
+			"NO",
+		},
+		OutcomePrices: []string{
+			"0.73",
+			"0.27",
+		},
+	}
+
+	_, err := GetPriceForOutcome(market, "MAYBE")
+
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestGetPriceForOutcomeInvalidPrice(t *testing.T) {
+	market := &polyapi.Market{
+		Outcomes: []string{
+			"YES",
+			"NO",
+		},
+		OutcomePrices: []string{
+			"invalid-price",
+			"0.27",
+		},
+	}
+
+	_, err := GetPriceForOutcome(market, "YES")
+
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestGetPriceForOutcomeEmptyPrices(t *testing.T) {
+	market := &polyapi.Market{
+		Outcomes: []string{
+			"YES",
+		},
+		OutcomePrices: []string{},
+	}
+
+	_, err := GetPriceForOutcome(market, "YES")
+
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
