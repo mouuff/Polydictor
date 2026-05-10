@@ -23,7 +23,7 @@ func NewOrchestrator(db Store) *Orchestrator {
 		ctx:           context.Background(),
 		api:           polyapi.NewPolyapi(),
 		db:            db,
-		CacheDuration: 24 * time.Hour,
+		CacheDuration: 12 * time.Hour,
 		Debug:         true,
 	}
 }
