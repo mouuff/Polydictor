@@ -3,6 +3,7 @@ package polyflow
 import "time"
 
 type MarketOutcomeAnalysis struct {
+	Price              float64
 	Outcome            string
 	ProfitRate         float64
 	WeightedProfitRate float64

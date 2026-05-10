@@ -112,7 +112,13 @@ func (o *Analyzer) analyzeMarketOutcome(market *polyapi.Market, tokenHolders *[]
 		weightedProfitRate = weightedProfitRateSum / totalProfitWeight
 	}
 
+	price, err := GetPriceForOutcome(market, outcome)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get price for outcome: %w", err)
+	}
+
 	return &MarketOutcomeAnalysis{
+		Price:              price,
 		Outcome:            outcome,
 		ProfitRate:         avgProfitRate,
 		WeightedProfitRate: weightedProfitRate,
