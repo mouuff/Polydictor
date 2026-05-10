@@ -41,8 +41,10 @@ func (o *Analyzer) AnalyzeMarket(slug string) (*MarketAnalysis, error) {
 
 	// Perform market analysis logic here
 	analysis := &MarketAnalysis{
-		MarketId: market.Id,
-		Outcomes: []MarketOutcomeAnalysis{},
+		MarketId:   market.Id,
+		Slug:       market.Slug,
+		Outcomes:   []MarketOutcomeAnalysis{},
+		LookupTime: time.Now(),
 	}
 
 	for _, outcome := range market.Outcomes {
@@ -125,7 +127,6 @@ func (o *Analyzer) analyzeMarketOutcome(market *polyapi.Market, tokenHolders *[]
 		WeightedProfitRate: weightedProfitRate,
 		PredictionRate:     avgPredictionRate,
 		TotalProfit:        profit,
-		LookupTime:         time.Now(),
 	}, nil
 }
 

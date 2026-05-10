@@ -9,12 +9,13 @@ type MarketOutcomeAnalysis struct {
 	WeightedProfitRate float64
 	PredictionRate     float64
 	TotalProfit        float64
-	LookupTime         time.Time
 }
 
 type MarketAnalysis struct {
-	MarketId string
-	Outcomes []MarketOutcomeAnalysis
+	MarketId   string
+	Slug       string
+	LookupTime time.Time
+	Outcomes   []MarketOutcomeAnalysis
 }
 
 type ScoredUser struct {

@@ -53,6 +53,7 @@ func (s *SQLiteStore) createTables() error {
 		CREATE TABLE IF NOT EXISTS market_analysis (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			market_id TEXT NOT NULL,
+			slug TEXT NOT NULL,
 			outcomes_json TEXT NOT NULL,
 			lookup_time TEXT NOT NULL
 		)
@@ -207,6 +208,10 @@ func (s *SQLiteStore) SaveMarketAnalysis(analysis *MarketAnalysis) error {
 		return fmt.Errorf("market analysis has no outcomes")
 	}
 
+	if analysis.LookupTime.IsZero() {
+		analysis.LookupTime = time.Now().UTC()
+	}
+
 	outcomesJSON, err := json.Marshal(analysis.Outcomes)
 	if err != nil {
 		return fmt.Errorf(
@@ -215,19 +220,19 @@ func (s *SQLiteStore) SaveMarketAnalysis(analysis *MarketAnalysis) error {
 		)
 	}
 
-	lookupTime := analysis.Outcomes[0].LookupTime
-
 	_, err = s.db.Exec(`
 		INSERT INTO market_analysis (
 			market_id,
+			slug,
 			outcomes_json,
 			lookup_time
 		)
-		VALUES (?, ?, ?)
+		VALUES (?, ?, ?, ?)
 	`,
 		analysis.MarketId,
+		analysis.Slug,
 		string(outcomesJSON),
-		lookupTime.Format(time.RFC3339),
+		analysis.LookupTime.Format(time.RFC3339),
 	)
 
 	return err
@@ -246,6 +251,7 @@ func (s *SQLiteStore) GetMarketAnalysisUntil(
 	rows, err := s.db.Query(`
 		SELECT
 			market_id,
+			slug,
 			outcomes_json,
 			lookup_time
 		FROM market_analysis
@@ -267,12 +273,14 @@ func (s *SQLiteStore) GetMarketAnalysisUntil(
 	var analyses []*MarketAnalysis
 
 	for rows.Next() {
-		var marketId string
+		var analysis MarketAnalysis
+
 		var outcomesJSON string
 		var lookupTimeStr string
 
 		err := rows.Scan(
-			&marketId,
+			&analysis.MarketId,
+			&analysis.Slug,
 			&outcomesJSON,
 			&lookupTimeStr,
 		)
@@ -280,22 +288,23 @@ func (s *SQLiteStore) GetMarketAnalysisUntil(
 			return nil, err
 		}
 
-		var outcomes []MarketOutcomeAnalysis
-
 		err = json.Unmarshal(
 			[]byte(outcomesJSON),
-			&outcomes,
+			&analysis.Outcomes,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		analysis := &MarketAnalysis{
-			MarketId: marketId,
-			Outcomes: outcomes,
+		analysis.LookupTime, err = time.Parse(
+			time.RFC3339,
+			lookupTimeStr,
+		)
+		if err != nil {
+			return nil, err
 		}
 
-		analyses = append(analyses, analysis)
+		analyses = append(analyses, &analysis)
 	}
 
 	return analyses, rows.Err()

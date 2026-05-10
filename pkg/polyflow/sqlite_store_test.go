@@ -316,7 +316,9 @@ func TestSaveAndGetMarketAnalysis(t *testing.T) {
 	now := time.Now().UTC().Truncate(time.Second)
 
 	analysis := &MarketAnalysis{
-		MarketId: "market-1",
+		MarketId:   "market-1",
+		Slug:       "will-btc-go-up",
+		LookupTime: now,
 		Outcomes: []MarketOutcomeAnalysis{
 			{
 				Price:              0.72,
@@ -325,7 +327,6 @@ func TestSaveAndGetMarketAnalysis(t *testing.T) {
 				WeightedProfitRate: 1.8,
 				PredictionRate:     0.84,
 				TotalProfit:        1200,
-				LookupTime:         now,
 			},
 			{
 				Price:              0.28,
@@ -334,7 +335,6 @@ func TestSaveAndGetMarketAnalysis(t *testing.T) {
 				WeightedProfitRate: -0.3,
 				PredictionRate:     0.16,
 				TotalProfit:        -400,
-				LookupTime:         now,
 			},
 		},
 	}
@@ -371,6 +371,22 @@ func TestSaveAndGetMarketAnalysis(t *testing.T) {
 		)
 	}
 
+	if got.Slug != analysis.Slug {
+		t.Fatalf(
+			"unexpected slug: got %s want %s",
+			got.Slug,
+			analysis.Slug,
+		)
+	}
+
+	if !got.LookupTime.Equal(analysis.LookupTime) {
+		t.Fatalf(
+			"unexpected lookup time: got %v want %v",
+			got.LookupTime,
+			analysis.LookupTime,
+		)
+	}
+
 	if len(got.Outcomes) != 2 {
 		t.Fatalf(
 			"unexpected outcome count: got %d want %d",
@@ -402,21 +418,23 @@ func TestGetMarketAnalysisSortedByDate(t *testing.T) {
 	newTime := time.Now().Add(-1 * time.Hour).UTC()
 
 	oldAnalysis := &MarketAnalysis{
-		MarketId: "market-sort",
+		MarketId:   "market-sort",
+		Slug:       "old-market",
+		LookupTime: oldTime,
 		Outcomes: []MarketOutcomeAnalysis{
 			{
-				Outcome:    "YES",
-				LookupTime: oldTime,
+				Outcome: "YES",
 			},
 		},
 	}
 
 	newAnalysis := &MarketAnalysis{
-		MarketId: "market-sort",
+		MarketId:   "market-sort",
+		Slug:       "new-market",
+		LookupTime: newTime,
 		Outcomes: []MarketOutcomeAnalysis{
 			{
-				Outcome:    "YES",
-				LookupTime: newTime,
+				Outcome: "YES",
 			},
 		},
 	}
@@ -448,10 +466,7 @@ func TestGetMarketAnalysisSortedByDate(t *testing.T) {
 		)
 	}
 
-	firstLookup := results[0].Outcomes[0].LookupTime
-	secondLookup := results[1].Outcomes[0].LookupTime
-
-	if !firstLookup.After(secondLookup) {
+	if !results[0].LookupTime.After(results[1].LookupTime) {
 		t.Fatal("expected newest analysis first")
 	}
 }
@@ -460,25 +475,33 @@ func TestGetMarketAnalysisUntil(t *testing.T) {
 	store := newTestStore(t)
 	defer store.Close()
 
-	oldTime := time.Now().Add(-48 * time.Hour).UTC()
-	newTime := time.Now().UTC()
+	oldTime := time.Now().
+		Add(-48 * time.Hour).
+		UTC().
+		Truncate(time.Second)
+
+	newTime := time.Now().
+		UTC().
+		Truncate(time.Second)
 
 	oldAnalysis := &MarketAnalysis{
-		MarketId: "market-filter",
+		MarketId:   "market-filter",
+		Slug:       "old-analysis",
+		LookupTime: oldTime,
 		Outcomes: []MarketOutcomeAnalysis{
 			{
-				Outcome:    "YES",
-				LookupTime: oldTime,
+				Outcome: "YES",
 			},
 		},
 	}
 
 	newAnalysis := &MarketAnalysis{
-		MarketId: "market-filter",
+		MarketId:   "market-filter",
+		Slug:       "new-analysis",
+		LookupTime: newTime,
 		Outcomes: []MarketOutcomeAnalysis{
 			{
-				Outcome:    "YES",
-				LookupTime: newTime,
+				Outcome: "YES",
 			},
 		},
 	}
@@ -510,13 +533,20 @@ func TestGetMarketAnalysisUntil(t *testing.T) {
 		)
 	}
 
-	gotLookup := results[0].Outcomes[0].LookupTime
+	got := results[0]
 
-	if !gotLookup.Equal(oldTime) {
+	if !got.LookupTime.Equal(oldTime) {
 		t.Fatalf(
 			"unexpected lookup time: got %v want %v",
-			gotLookup,
+			got.LookupTime,
 			oldTime,
+		)
+	}
+
+	if got.Slug != "old-analysis" {
+		t.Fatalf(
+			"unexpected slug: got %s",
+			got.Slug,
 		)
 	}
 }
@@ -526,8 +556,10 @@ func TestSaveMarketAnalysisWithoutOutcomes(t *testing.T) {
 	defer store.Close()
 
 	analysis := &MarketAnalysis{
-		MarketId: "market-empty",
-		Outcomes: []MarketOutcomeAnalysis{},
+		MarketId:   "market-empty",
+		Slug:       "empty-market",
+		LookupTime: time.Now(),
+		Outcomes:   []MarketOutcomeAnalysis{},
 	}
 
 	err := store.SaveMarketAnalysis(analysis)
@@ -555,5 +587,46 @@ func TestGetMarketAnalysisEmpty(t *testing.T) {
 			"expected empty results, got %d",
 			len(results),
 		)
+	}
+}
+
+func TestSaveMarketAnalysisSetsLookupTime(t *testing.T) {
+	store := newTestStore(t)
+	defer store.Close()
+
+	analysis := &MarketAnalysis{
+		MarketId: "market-auto-time",
+		Slug:     "auto-time-market",
+		Outcomes: []MarketOutcomeAnalysis{
+			{
+				Outcome: "YES",
+			},
+		},
+	}
+
+	err := store.SaveMarketAnalysis(analysis)
+	if err != nil {
+		t.Fatalf("failed to save market analysis: %v", err)
+	}
+
+	results, err := store.GetMarketAnalysisUntil(
+		"market-auto-time",
+		time.Now().Add(time.Hour),
+		10,
+	)
+	if err != nil {
+		t.Fatalf("failed to get market analysis: %v", err)
+	}
+
+	if len(results) != 1 {
+		t.Fatalf(
+			"unexpected result count: got %d want %d",
+			len(results),
+			1,
+		)
+	}
+
+	if results[0].LookupTime.IsZero() {
+		t.Fatal("expected lookup time to be automatically set")
 	}
 }
