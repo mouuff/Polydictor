@@ -24,6 +24,10 @@ type ScoredUser struct {
 	LookupTime     time.Time
 }
 
+type MarketAnalyzer interface {
+	AnalyzeMarket(slug string) (*MarketAnalysis, error)
+}
+
 type ScoredUserStore interface {
 	SaveScoredUser(user *ScoredUser) error
 	GetFreshScoredUser(proxyWallet string, cacheDuration time.Duration) (*ScoredUser, error)
