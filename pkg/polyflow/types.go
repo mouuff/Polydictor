@@ -39,7 +39,5 @@ type Store interface {
 
 	// Market
 	SaveMarketAnalysis(analysis *MarketAnalysis) error
-	GetMarketAnalysis(slug string) (*MarketAnalysis, error)
-	GetMarketAnalysisSortedByDate() ([]*MarketAnalysis, error)
-	GetMarketAnalysisUntil(time time.Time) ([]*MarketAnalysis, error)
+	GetMarketAnalysisUntil(marketId string, time time.Time, limit int) ([]*MarketAnalysis, error)
 }
