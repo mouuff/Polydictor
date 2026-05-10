@@ -41,7 +41,12 @@ func (cmd *UserCmd) Run() error {
 		return errors.New("-db parameter required")
 	}
 
-	var orchestrator = polyflow.NewOrchestrator(cmd.dbPath)
+	db, err := polyflow.NewSQLiteStore(cmd.dbPath)
+	if err != nil {
+		log.Fatalf("Failed to initialize SQLite store: %v", err)
+	}
+
+	var orchestrator = polyflow.NewOrchestrator(db)
 
 	user, err := orchestrator.GetScoredUser(cmd.id, "")
 	if err != nil {

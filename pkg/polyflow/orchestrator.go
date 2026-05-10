@@ -13,39 +13,12 @@ import (
 type Orchestrator struct {
 	ctx           context.Context
 	api           *polyapi.Polyapi
-	db            *SQLiteStore
+	db            Store
 	CacheDuration time.Duration
 	Debug         bool
 }
 
-type MarketOutcomeAnalysis struct {
-	Outcome            string
-	ProfitRate         float64
-	WeightedProfitRate float64
-	PredictionRate     float64
-	Profit             float64
-	LookupTime         time.Time
-}
-
-type MarketAnalysis struct {
-	Outcomes []MarketOutcomeAnalysis
-}
-
-type ScoredUser struct {
-	ProxyWallet    string
-	Name           string
-	PredictionRate float64
-	ProfitRate     float64
-	Profit         float64
-	LookupTime     time.Time
-}
-
-func NewOrchestrator(dbPath string) *Orchestrator {
-	db, err := NewSQLiteStore(dbPath)
-	if err != nil {
-		log.Fatalf("Failed to initialize SQLite store: %v", err)
-	}
-
+func NewOrchestrator(db Store) *Orchestrator {
 	return &Orchestrator{
 		ctx:           context.Background(),
 		api:           polyapi.NewPolyapi(),

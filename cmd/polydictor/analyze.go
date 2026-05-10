@@ -42,7 +42,12 @@ func (cmd *AnalyzeCmd) Run() error {
 		return errors.New("-db parameter required")
 	}
 
-	orchestrator := polyflow.NewOrchestrator(cmd.dbPath)
+	db, err := polyflow.NewSQLiteStore(cmd.dbPath)
+	if err != nil {
+		log.Fatalf("Failed to initialize SQLite store: %v", err)
+	}
+
+	orchestrator := polyflow.NewOrchestrator(db)
 	analysis, err := orchestrator.AnalyzeMarket(cmd.marketId)
 	if err != nil {
 		return err
