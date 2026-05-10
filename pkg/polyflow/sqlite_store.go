@@ -51,7 +51,7 @@ func (s *SQLiteStore) createTables() error {
 // Save user (insert or update)
 // ------------------------------------------------------------
 
-func (s *SQLiteStore) SaveUser(
+func (s *SQLiteStore) SaveScoredUser(
 	user *ScoredUser,
 ) error {
 
@@ -81,7 +81,7 @@ func (s *SQLiteStore) SaveUser(
 	return err
 }
 
-func (s *SQLiteStore) GetFreshUser(proxyWallet string, maxAge time.Duration) (*ScoredUser, error) {
+func (s *SQLiteStore) GetFreshScoredUser(proxyWallet string, maxAge time.Duration) (*ScoredUser, error) {
 	user, err := s.GetUser(proxyWallet)
 	if err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func (s *SQLiteStore) GetFreshUser(proxyWallet string, maxAge time.Duration) (*S
 
 	// Delete stale users
 	if time.Since(user.LookupTime) > maxAge {
-		if err := s.DeleteUser(proxyWallet); err != nil {
+		if err := s.DeleteScoredUser(proxyWallet); err != nil {
 			return nil, err
 		}
 
@@ -155,7 +155,7 @@ func (s *SQLiteStore) GetUser(
 // Delete user by proxy wallet
 // ------------------------------------------------------------
 
-func (s *SQLiteStore) DeleteUser(
+func (s *SQLiteStore) DeleteScoredUser(
 	proxyWallet string,
 ) error {
 

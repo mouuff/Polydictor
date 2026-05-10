@@ -25,7 +25,7 @@ type ScoredUser struct {
 }
 
 type Store interface {
-	SaveUser(user *ScoredUser) error
-	GetFreshUser(proxyWallet string, cacheDuration time.Duration) (*ScoredUser, error)
-	DeleteUser(proxyWallet string) error
+	SaveScoredUser(user *ScoredUser) error
+	GetFreshScoredUser(proxyWallet string, cacheDuration time.Duration) (*ScoredUser, error)
+	DeleteScoredUser(proxyWallet string) error
 }

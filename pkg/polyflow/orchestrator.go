@@ -45,7 +45,7 @@ func (o *Orchestrator) AnalyzeMarket(slug string) (*MarketAnalysis, error) {
 	}
 
 	for _, outcome := range market.Outcomes {
-		marketOutcomeAnalysis, err := o.AnalyzeMarketOutcome(market, tokenHolders, outcome)
+		marketOutcomeAnalysis, err := o.analyzeMarketOutcome(market, tokenHolders, outcome)
 		if err != nil {
 			return nil, fmt.Errorf("failed to analyze outcome %s: %w", outcome, err)
 		}
@@ -56,7 +56,7 @@ func (o *Orchestrator) AnalyzeMarket(slug string) (*MarketAnalysis, error) {
 	return analysis, nil
 }
 
-func (o *Orchestrator) AnalyzeMarketOutcome(market *polyapi.Market, tokenHolders *[]polyapi.TokenHolderGroup, outcome string) (*MarketOutcomeAnalysis, error) {
+func (o *Orchestrator) analyzeMarketOutcome(market *polyapi.Market, tokenHolders *[]polyapi.TokenHolderGroup, outcome string) (*MarketOutcomeAnalysis, error) {
 	if o.Debug {
 		log.Printf("Analyzing outcome: %s\n", outcome)
 	}
@@ -143,7 +143,7 @@ func (o *Orchestrator) GetScoredUsers(holders []polyapi.Holder) ([]*ScoredUser, 
 }
 
 func (o *Orchestrator) GetScoredUser(proxyWallet, name string) (*ScoredUser, error) {
-	u, err := o.db.GetFreshUser(proxyWallet, o.CacheDuration)
+	u, err := o.db.GetFreshScoredUser(proxyWallet, o.CacheDuration)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user from database: %w", err)
 	}
@@ -166,7 +166,7 @@ func (o *Orchestrator) GetScoredUser(proxyWallet, name string) (*ScoredUser, err
 		LookupTime:     time.Now(),
 	}
 
-	if err := o.db.SaveUser(entry); err != nil {
+	if err := o.db.SaveScoredUser(entry); err != nil {
 		return nil, fmt.Errorf("failed to save user to database: %w", err)
 	}
 

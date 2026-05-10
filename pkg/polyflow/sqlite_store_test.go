@@ -34,7 +34,7 @@ func TestSaveAndGetUser(t *testing.T) {
 		LookupTime:     now,
 	}
 
-	err := store.SaveUser(expected)
+	err := store.SaveScoredUser(expected)
 	if err != nil {
 		t.Fatalf("failed to save user: %v", err)
 	}
@@ -97,7 +97,7 @@ func TestSaveAndGetUser(t *testing.T) {
 	}
 }
 
-func TestGetFreshUserDeletesExpiredUser(t *testing.T) {
+func TestGetFreshScoredUserDeletesExpiredUser(t *testing.T) {
 	store := newTestStore(t)
 	defer store.Close()
 
@@ -110,12 +110,12 @@ func TestGetFreshUserDeletesExpiredUser(t *testing.T) {
 		LookupTime:     time.Now().Add(-48 * time.Hour),
 	}
 
-	err := store.SaveUser(user)
+	err := store.SaveScoredUser(user)
 	if err != nil {
 		t.Fatalf("failed to save user: %v", err)
 	}
 
-	got, err := store.GetFreshUser(
+	got, err := store.GetFreshScoredUser(
 		user.ProxyWallet,
 		24*time.Hour,
 	)
@@ -138,7 +138,7 @@ func TestGetFreshUserDeletesExpiredUser(t *testing.T) {
 	}
 }
 
-func TestGetFreshUserReturnsFreshUser(t *testing.T) {
+func TestGetFreshScoredUserReturnsFreshUser(t *testing.T) {
 	store := newTestStore(t)
 	defer store.Close()
 
@@ -151,12 +151,12 @@ func TestGetFreshUserReturnsFreshUser(t *testing.T) {
 		LookupTime:     time.Now().Add(-1 * time.Hour),
 	}
 
-	err := store.SaveUser(user)
+	err := store.SaveScoredUser(user)
 	if err != nil {
 		t.Fatalf("failed to save user: %v", err)
 	}
 
-	got, err := store.GetFreshUser(
+	got, err := store.GetFreshScoredUser(
 		user.ProxyWallet,
 		24*time.Hour,
 	)
@@ -201,7 +201,7 @@ func TestGetUserNotFound(t *testing.T) {
 	}
 }
 
-func TestDeleteUser(t *testing.T) {
+func TestDeleteScoredUser(t *testing.T) {
 	store := newTestStore(t)
 	defer store.Close()
 
@@ -214,12 +214,12 @@ func TestDeleteUser(t *testing.T) {
 		LookupTime:     time.Now().UTC(),
 	}
 
-	err := store.SaveUser(user)
+	err := store.SaveScoredUser(user)
 	if err != nil {
 		t.Fatalf("failed to save user: %v", err)
 	}
 
-	err = store.DeleteUser(user.ProxyWallet)
+	err = store.DeleteScoredUser(user.ProxyWallet)
 	if err != nil {
 		t.Fatalf("failed to delete user: %v", err)
 	}
@@ -234,7 +234,7 @@ func TestDeleteUser(t *testing.T) {
 	}
 }
 
-func TestSaveUserUpdatesExisting(t *testing.T) {
+func TestSaveScoredUserUpdatesExisting(t *testing.T) {
 	store := newTestStore(t)
 	defer store.Close()
 
@@ -247,7 +247,7 @@ func TestSaveUserUpdatesExisting(t *testing.T) {
 		LookupTime:     time.Now().UTC(),
 	}
 
-	err := store.SaveUser(user)
+	err := store.SaveScoredUser(user)
 	if err != nil {
 		t.Fatalf("failed to save initial user: %v", err)
 	}
@@ -255,7 +255,7 @@ func TestSaveUserUpdatesExisting(t *testing.T) {
 	user.Name = "Updated"
 	user.Profit = 999
 
-	err = store.SaveUser(user)
+	err = store.SaveScoredUser(user)
 	if err != nil {
 		t.Fatalf("failed to update user: %v", err)
 	}
@@ -282,7 +282,7 @@ func TestSaveUserUpdatesExisting(t *testing.T) {
 	}
 }
 
-func TestSaveUserSetsLookupTime(t *testing.T) {
+func TestSaveScoredUserSetsLookupTime(t *testing.T) {
 	store := newTestStore(t)
 	defer store.Close()
 
@@ -294,7 +294,7 @@ func TestSaveUserSetsLookupTime(t *testing.T) {
 		Profit:         1,
 	}
 
-	err := store.SaveUser(user)
+	err := store.SaveScoredUser(user)
 	if err != nil {
 		t.Fatalf("failed to save user: %v", err)
 	}
