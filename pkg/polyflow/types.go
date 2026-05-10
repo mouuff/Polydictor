@@ -13,6 +13,7 @@ type MarketOutcomeAnalysis struct {
 }
 
 type MarketAnalysis struct {
+	MarketId string
 	Outcomes []MarketOutcomeAnalysis
 }
 

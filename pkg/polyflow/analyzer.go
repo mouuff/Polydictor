@@ -41,6 +41,7 @@ func (o *Analyzer) AnalyzeMarket(slug string) (*MarketAnalysis, error) {
 
 	// Perform market analysis logic here
 	analysis := &MarketAnalysis{
+		MarketId: market.Id,
 		Outcomes: []MarketOutcomeAnalysis{},
 	}
 
