@@ -13,12 +13,12 @@ import (
 type Analyzer struct {
 	ctx           context.Context
 	api           *polyapi.Polyapi
-	db            ScoredUserStore
+	db            Store
 	CacheDuration time.Duration
 	Debug         bool
 }
 
-func NewAnalyzer(db ScoredUserStore) *Analyzer {
+func NewAnalyzer(db Store) *Analyzer {
 	return &Analyzer{
 		ctx:           context.Background(),
 		api:           polyapi.NewPolyapi(),
