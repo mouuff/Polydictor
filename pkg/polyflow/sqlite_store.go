@@ -2,6 +2,8 @@ package polyflow
 
 import (
 	"database/sql"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -42,6 +44,34 @@ func (s *SQLiteStore) createTables() error {
 			profit REAL NOT NULL,
 			lookup_time TEXT NOT NULL
 		)
+	`)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.db.Exec(`
+		CREATE TABLE IF NOT EXISTS market_analysis (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			market_id TEXT NOT NULL,
+			outcomes_json TEXT NOT NULL,
+			lookup_time TEXT NOT NULL
+		)
+	`)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.db.Exec(`
+		CREATE INDEX IF NOT EXISTS idx_market_analysis_market_id
+		ON market_analysis(market_id)
+	`)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.db.Exec(`
+		CREATE INDEX IF NOT EXISTS idx_market_analysis_lookup_time
+		ON market_analysis(lookup_time)
 	`)
 
 	return err
@@ -165,6 +195,110 @@ func (s *SQLiteStore) DeleteScoredUser(
 	`, proxyWallet)
 
 	return err
+}
+
+// ------------------------------------------------------------
+// Save market analysis
+// ------------------------------------------------------------
+
+func (s *SQLiteStore) SaveMarketAnalysis(analysis *MarketAnalysis) error {
+
+	if len(analysis.Outcomes) == 0 {
+		return fmt.Errorf("market analysis has no outcomes")
+	}
+
+	outcomesJSON, err := json.Marshal(analysis.Outcomes)
+	if err != nil {
+		return fmt.Errorf(
+			"failed to marshal outcomes: %w",
+			err,
+		)
+	}
+
+	lookupTime := analysis.Outcomes[0].LookupTime
+
+	_, err = s.db.Exec(`
+		INSERT INTO market_analysis (
+			market_id,
+			outcomes_json,
+			lookup_time
+		)
+		VALUES (?, ?, ?)
+	`,
+		analysis.MarketId,
+		string(outcomesJSON),
+		lookupTime.Format(time.RFC3339),
+	)
+
+	return err
+}
+
+// ------------------------------------------------------------
+// Get market analysis history
+// ------------------------------------------------------------
+
+func (s *SQLiteStore) GetMarketAnalysisUntil(
+	marketId string,
+	until time.Time,
+	limit int,
+) ([]*MarketAnalysis, error) {
+
+	rows, err := s.db.Query(`
+		SELECT
+			market_id,
+			outcomes_json,
+			lookup_time
+		FROM market_analysis
+		WHERE market_id = ?
+		AND lookup_time <= ?
+		ORDER BY lookup_time DESC
+		LIMIT ?
+	`,
+		marketId,
+		until.Format(time.RFC3339),
+		limit,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var analyses []*MarketAnalysis
+
+	for rows.Next() {
+		var marketId string
+		var outcomesJSON string
+		var lookupTimeStr string
+
+		err := rows.Scan(
+			&marketId,
+			&outcomesJSON,
+			&lookupTimeStr,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		var outcomes []MarketOutcomeAnalysis
+
+		err = json.Unmarshal(
+			[]byte(outcomesJSON),
+			&outcomes,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		analysis := &MarketAnalysis{
+			MarketId: marketId,
+			Outcomes: outcomes,
+		}
+
+		analyses = append(analyses, analysis)
+	}
+
+	return analyses, rows.Err()
 }
 
 // ------------------------------------------------------------

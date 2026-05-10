@@ -308,3 +308,252 @@ func TestSaveScoredUserSetsLookupTime(t *testing.T) {
 		t.Fatal("expected lookup time to be automatically set")
 	}
 }
+
+func TestSaveAndGetMarketAnalysis(t *testing.T) {
+	store := newTestStore(t)
+	defer store.Close()
+
+	now := time.Now().UTC().Truncate(time.Second)
+
+	analysis := &MarketAnalysis{
+		MarketId: "market-1",
+		Outcomes: []MarketOutcomeAnalysis{
+			{
+				Price:              0.72,
+				Outcome:            "YES",
+				ProfitRate:         1.5,
+				WeightedProfitRate: 1.8,
+				PredictionRate:     0.84,
+				TotalProfit:        1200,
+				LookupTime:         now,
+			},
+			{
+				Price:              0.28,
+				Outcome:            "NO",
+				ProfitRate:         -0.5,
+				WeightedProfitRate: -0.3,
+				PredictionRate:     0.16,
+				TotalProfit:        -400,
+				LookupTime:         now,
+			},
+		},
+	}
+
+	err := store.SaveMarketAnalysis(analysis)
+	if err != nil {
+		t.Fatalf("failed to save market analysis: %v", err)
+	}
+
+	results, err := store.GetMarketAnalysisUntil(
+		"market-1",
+		time.Now().Add(time.Hour),
+		10,
+	)
+	if err != nil {
+		t.Fatalf("failed to get market analysis: %v", err)
+	}
+
+	if len(results) != 1 {
+		t.Fatalf(
+			"unexpected analysis count: got %d want %d",
+			len(results),
+			1,
+		)
+	}
+
+	got := results[0]
+
+	if got.MarketId != analysis.MarketId {
+		t.Fatalf(
+			"unexpected market id: got %s want %s",
+			got.MarketId,
+			analysis.MarketId,
+		)
+	}
+
+	if len(got.Outcomes) != 2 {
+		t.Fatalf(
+			"unexpected outcome count: got %d want %d",
+			len(got.Outcomes),
+			2,
+		)
+	}
+
+	if got.Outcomes[0].Outcome != "YES" {
+		t.Fatalf(
+			"unexpected first outcome: got %s",
+			got.Outcomes[0].Outcome,
+		)
+	}
+
+	if got.Outcomes[1].Outcome != "NO" {
+		t.Fatalf(
+			"unexpected second outcome: got %s",
+			got.Outcomes[1].Outcome,
+		)
+	}
+}
+
+func TestGetMarketAnalysisSortedByDate(t *testing.T) {
+	store := newTestStore(t)
+	defer store.Close()
+
+	oldTime := time.Now().Add(-2 * time.Hour).UTC()
+	newTime := time.Now().Add(-1 * time.Hour).UTC()
+
+	oldAnalysis := &MarketAnalysis{
+		MarketId: "market-sort",
+		Outcomes: []MarketOutcomeAnalysis{
+			{
+				Outcome:    "YES",
+				LookupTime: oldTime,
+			},
+		},
+	}
+
+	newAnalysis := &MarketAnalysis{
+		MarketId: "market-sort",
+		Outcomes: []MarketOutcomeAnalysis{
+			{
+				Outcome:    "YES",
+				LookupTime: newTime,
+			},
+		},
+	}
+
+	err := store.SaveMarketAnalysis(oldAnalysis)
+	if err != nil {
+		t.Fatalf("failed to save old analysis: %v", err)
+	}
+
+	err = store.SaveMarketAnalysis(newAnalysis)
+	if err != nil {
+		t.Fatalf("failed to save new analysis: %v", err)
+	}
+
+	results, err := store.GetMarketAnalysisUntil(
+		"market-sort",
+		time.Now(),
+		10,
+	)
+	if err != nil {
+		t.Fatalf("failed to get analyses: %v", err)
+	}
+
+	if len(results) != 2 {
+		t.Fatalf(
+			"unexpected analysis count: got %d want %d",
+			len(results),
+			2,
+		)
+	}
+
+	firstLookup := results[0].Outcomes[0].LookupTime
+	secondLookup := results[1].Outcomes[0].LookupTime
+
+	if !firstLookup.After(secondLookup) {
+		t.Fatal("expected newest analysis first")
+	}
+}
+
+func TestGetMarketAnalysisUntil(t *testing.T) {
+	store := newTestStore(t)
+	defer store.Close()
+
+	oldTime := time.Now().Add(-48 * time.Hour).UTC()
+	newTime := time.Now().UTC()
+
+	oldAnalysis := &MarketAnalysis{
+		MarketId: "market-filter",
+		Outcomes: []MarketOutcomeAnalysis{
+			{
+				Outcome:    "YES",
+				LookupTime: oldTime,
+			},
+		},
+	}
+
+	newAnalysis := &MarketAnalysis{
+		MarketId: "market-filter",
+		Outcomes: []MarketOutcomeAnalysis{
+			{
+				Outcome:    "YES",
+				LookupTime: newTime,
+			},
+		},
+	}
+
+	err := store.SaveMarketAnalysis(oldAnalysis)
+	if err != nil {
+		t.Fatalf("failed to save old analysis: %v", err)
+	}
+
+	err = store.SaveMarketAnalysis(newAnalysis)
+	if err != nil {
+		t.Fatalf("failed to save new analysis: %v", err)
+	}
+
+	results, err := store.GetMarketAnalysisUntil(
+		"market-filter",
+		oldTime.Add(time.Hour),
+		10,
+	)
+	if err != nil {
+		t.Fatalf("failed to get filtered analyses: %v", err)
+	}
+
+	if len(results) != 1 {
+		t.Fatalf(
+			"unexpected analysis count: got %d want %d",
+			len(results),
+			1,
+		)
+	}
+
+	gotLookup := results[0].Outcomes[0].LookupTime
+
+	if !gotLookup.Equal(oldTime) {
+		t.Fatalf(
+			"unexpected lookup time: got %v want %v",
+			gotLookup,
+			oldTime,
+		)
+	}
+}
+
+func TestSaveMarketAnalysisWithoutOutcomes(t *testing.T) {
+	store := newTestStore(t)
+	defer store.Close()
+
+	analysis := &MarketAnalysis{
+		MarketId: "market-empty",
+		Outcomes: []MarketOutcomeAnalysis{},
+	}
+
+	err := store.SaveMarketAnalysis(analysis)
+
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestGetMarketAnalysisEmpty(t *testing.T) {
+	store := newTestStore(t)
+	defer store.Close()
+
+	results, err := store.GetMarketAnalysisUntil(
+		"does-not-exist",
+		time.Now(),
+		10,
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(results) != 0 {
+		t.Fatalf(
+			"expected empty results, got %d",
+			len(results),
+		)
+	}
+}
