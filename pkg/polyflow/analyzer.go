@@ -10,16 +10,16 @@ import (
 	"github.com/mouuff/polydictor/pkg/polyapi"
 )
 
-type Orchestrator struct {
+type Analyzer struct {
 	ctx           context.Context
 	api           *polyapi.Polyapi
-	db            Store
+	db            ScoredUserStore
 	CacheDuration time.Duration
 	Debug         bool
 }
 
-func NewOrchestrator(db Store) *Orchestrator {
-	return &Orchestrator{
+func NewAnalyzer(db ScoredUserStore) *Analyzer {
+	return &Analyzer{
 		ctx:           context.Background(),
 		api:           polyapi.NewPolyapi(),
 		db:            db,
@@ -28,7 +28,7 @@ func NewOrchestrator(db Store) *Orchestrator {
 	}
 }
 
-func (o *Orchestrator) AnalyzeMarket(slug string) (*MarketAnalysis, error) {
+func (o *Analyzer) AnalyzeMarket(slug string) (*MarketAnalysis, error) {
 	market, err := o.api.GetMarketBySlug(o.ctx, slug)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get market info for slug %s: %w", slug, err)
@@ -56,7 +56,7 @@ func (o *Orchestrator) AnalyzeMarket(slug string) (*MarketAnalysis, error) {
 	return analysis, nil
 }
 
-func (o *Orchestrator) analyzeMarketOutcome(market *polyapi.Market, tokenHolders *[]polyapi.TokenHolderGroup, outcome string) (*MarketOutcomeAnalysis, error) {
+func (o *Analyzer) analyzeMarketOutcome(market *polyapi.Market, tokenHolders *[]polyapi.TokenHolderGroup, outcome string) (*MarketOutcomeAnalysis, error) {
 	if o.Debug {
 		log.Printf("Analyzing outcome: %s\n", outcome)
 	}
@@ -122,7 +122,7 @@ func (o *Orchestrator) analyzeMarketOutcome(market *polyapi.Market, tokenHolders
 	}, nil
 }
 
-func (o *Orchestrator) GetScoredUsers(holders []polyapi.Holder) ([]*ScoredUser, error) {
+func (o *Analyzer) GetScoredUsers(holders []polyapi.Holder) ([]*ScoredUser, error) {
 	var scoredUsers []*ScoredUser
 
 	for _, holder := range holders {
@@ -142,7 +142,7 @@ func (o *Orchestrator) GetScoredUsers(holders []polyapi.Holder) ([]*ScoredUser, 
 	return scoredUsers, nil
 }
 
-func (o *Orchestrator) GetScoredUser(proxyWallet, name string) (*ScoredUser, error) {
+func (o *Analyzer) GetScoredUser(proxyWallet, name string) (*ScoredUser, error) {
 	u, err := o.db.GetFreshScoredUser(proxyWallet, o.CacheDuration)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user from database: %w", err)

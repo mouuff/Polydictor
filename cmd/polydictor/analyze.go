@@ -47,7 +47,7 @@ func (cmd *AnalyzeCmd) Run() error {
 		log.Fatalf("Failed to initialize SQLite store: %v", err)
 	}
 
-	orchestrator := polyflow.NewOrchestrator(db)
+	orchestrator := polyflow.NewAnalyzer(db)
 	analysis, err := orchestrator.AnalyzeMarket(cmd.marketId)
 	if err != nil {
 		return err

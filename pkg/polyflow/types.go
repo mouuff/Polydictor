@@ -24,7 +24,7 @@ type ScoredUser struct {
 	LookupTime     time.Time
 }
 
-type Store interface {
+type ScoredUserStore interface {
 	SaveScoredUser(user *ScoredUser) error
 	GetFreshScoredUser(proxyWallet string, cacheDuration time.Duration) (*ScoredUser, error)
 	DeleteScoredUser(proxyWallet string) error
