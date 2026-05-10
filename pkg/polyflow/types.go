@@ -7,7 +7,7 @@ type MarketOutcomeAnalysis struct {
 	ProfitRate         float64
 	WeightedProfitRate float64
 	PredictionRate     float64
-	Profit             float64
+	TotalProfit        float64
 	LookupTime         time.Time
 }
 

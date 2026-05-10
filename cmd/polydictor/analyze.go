@@ -55,7 +55,7 @@ func (cmd *AnalyzeCmd) Run() error {
 
 	for _, outcomeAnalysis := range analysis.Outcomes {
 		fmt.Printf("Outcome: %s - Weighted Profit Rate: %.2f%%,  Prediction Rate: %.2f%%, Profit Rate: %.2f%%, Profit: $%.2f\n",
-			outcomeAnalysis.Outcome, outcomeAnalysis.WeightedProfitRate*100, outcomeAnalysis.PredictionRate*100, outcomeAnalysis.ProfitRate*100, outcomeAnalysis.Profit)
+			outcomeAnalysis.Outcome, outcomeAnalysis.WeightedProfitRate*100, outcomeAnalysis.PredictionRate*100, outcomeAnalysis.ProfitRate*100, outcomeAnalysis.TotalProfit)
 	}
 
 	return nil

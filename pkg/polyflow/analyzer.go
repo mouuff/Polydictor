@@ -117,7 +117,7 @@ func (o *Analyzer) analyzeMarketOutcome(market *polyapi.Market, tokenHolders *[]
 		ProfitRate:         avgProfitRate,
 		WeightedProfitRate: weightedProfitRate,
 		PredictionRate:     avgPredictionRate,
-		Profit:             profit,
+		TotalProfit:        profit,
 		LookupTime:         time.Now(),
 	}, nil
 }
