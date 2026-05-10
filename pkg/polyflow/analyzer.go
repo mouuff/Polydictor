@@ -56,6 +56,11 @@ func (o *Analyzer) AnalyzeMarket(slug string) (*MarketAnalysis, error) {
 		analysis.Outcomes = append(analysis.Outcomes, *marketOutcomeAnalysis)
 	}
 
+	err = o.db.SaveMarketAnalysis(analysis)
+	if err != nil {
+		return nil, fmt.Errorf("failed to save market analysis: %w", err)
+	}
+
 	return analysis, nil
 }
 

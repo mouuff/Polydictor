@@ -32,7 +32,14 @@ type MarketAnalyzer interface {
 }
 
 type Store interface {
+	// ScoredUsers
 	SaveScoredUser(user *ScoredUser) error
 	GetFreshScoredUser(proxyWallet string, cacheDuration time.Duration) (*ScoredUser, error)
 	DeleteScoredUser(proxyWallet string) error
+
+	// Market
+	SaveMarketAnalysis(analysis *MarketAnalysis) error
+	GetMarketAnalysis(slug string) (*MarketAnalysis, error)
+	GetMarketAnalysisSortedByDate() ([]*MarketAnalysis, error)
+	GetMarketAnalysisUntil(time time.Time) ([]*MarketAnalysis, error)
 }
