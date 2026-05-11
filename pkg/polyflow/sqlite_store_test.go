@@ -344,9 +344,9 @@ func TestSaveAndGetMarketAnalysis(t *testing.T) {
 		t.Fatalf("failed to save market analysis: %v", err)
 	}
 
-	results, err := store.GetMarketAnalysisUntil(
+	results, err := store.GetMarketAnalysisSince(
 		"market-1",
-		time.Now().Add(-time.Hour),
+		time.Now().Add(-24*time.Hour),
 		10,
 	)
 	if err != nil {
@@ -449,9 +449,9 @@ func TestGetMarketAnalysisSortedByDate(t *testing.T) {
 		t.Fatalf("failed to save new analysis: %v", err)
 	}
 
-	results, err := store.GetMarketAnalysisUntil(
+	results, err := store.GetMarketAnalysisSince(
 		"market-sort",
-		time.Now(),
+		time.Now().Add(-24*time.Hour),
 		10,
 	)
 	if err != nil {
@@ -466,12 +466,12 @@ func TestGetMarketAnalysisSortedByDate(t *testing.T) {
 		)
 	}
 
-	if !results[0].LookupTime.After(results[1].LookupTime) {
+	if !results[1].LookupTime.After(results[0].LookupTime) {
 		t.Fatal("expected newest analysis first")
 	}
 }
 
-func TestGetMarketAnalysisUntil(t *testing.T) {
+func TestGetMarketAnalysisSince(t *testing.T) {
 	store := newTestStore(t)
 	defer store.Close()
 
@@ -516,7 +516,7 @@ func TestGetMarketAnalysisUntil(t *testing.T) {
 		t.Fatalf("failed to save new analysis: %v", err)
 	}
 
-	results, err := store.GetMarketAnalysisUntil(
+	results, err := store.GetMarketAnalysisSince(
 		"market-filter",
 		oldTime.Add(time.Hour),
 		10,
@@ -535,15 +535,15 @@ func TestGetMarketAnalysisUntil(t *testing.T) {
 
 	got := results[0]
 
-	if !got.LookupTime.Equal(oldTime) {
+	if !got.LookupTime.Equal(newTime) {
 		t.Fatalf(
 			"unexpected lookup time: got %v want %v",
 			got.LookupTime,
-			oldTime,
+			newTime,
 		)
 	}
 
-	if got.Slug != "old-analysis" {
+	if got.Slug != "new-analysis" {
 		t.Fatalf(
 			"unexpected slug: got %s",
 			got.Slug,
@@ -573,7 +573,7 @@ func TestGetMarketAnalysisEmpty(t *testing.T) {
 	store := newTestStore(t)
 	defer store.Close()
 
-	results, err := store.GetMarketAnalysisUntil(
+	results, err := store.GetMarketAnalysisSince(
 		"does-not-exist",
 		time.Now(),
 		10,
@@ -609,9 +609,9 @@ func TestSaveMarketAnalysisSetsLookupTime(t *testing.T) {
 		t.Fatalf("failed to save market analysis: %v", err)
 	}
 
-	results, err := store.GetMarketAnalysisUntil(
+	results, err := store.GetMarketAnalysisSince(
 		"market-auto-time",
-		time.Now().Add(-time.Hour),
+		time.Now().Add(-24*time.Hour),
 		10,
 	)
 	if err != nil {

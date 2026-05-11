@@ -242,9 +242,9 @@ func (s *SQLiteStore) SaveMarketAnalysis(analysis *MarketAnalysis) error {
 // Get market analysis history
 // ------------------------------------------------------------
 
-func (s *SQLiteStore) GetMarketAnalysisUntil(
+func (s *SQLiteStore) GetMarketAnalysisSince(
 	marketId string,
-	until time.Time,
+	since time.Time,
 	limit int,
 ) ([]*MarketAnalysis, error) {
 
@@ -257,11 +257,11 @@ func (s *SQLiteStore) GetMarketAnalysisUntil(
 		FROM market_analysis
 		WHERE market_id = ?
 		AND lookup_time >= ?
-		ORDER BY lookup_time DESC
+		ORDER BY lookup_time ASC
 		LIMIT ?
 	`,
 		marketId,
-		until.Format(time.RFC3339),
+		since.Format(time.RFC3339),
 		limit,
 	)
 

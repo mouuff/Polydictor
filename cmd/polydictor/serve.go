@@ -75,7 +75,7 @@ func (cmd *Serve) Run() error {
 		}
 
 		// Fetch all items
-		marketAnalysis, err := db.GetMarketAnalysisUntil(marketId, time.Now().AddDate(0, 0, -7), 10000)
+		marketAnalysis, err := db.GetMarketAnalysisSince(marketId, time.Now().AddDate(0, 0, -7), 10000)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Failed to fetch items: %v", err), http.StatusInternalServerError)
 			return

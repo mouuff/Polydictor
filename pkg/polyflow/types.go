@@ -39,5 +39,5 @@ type Store interface {
 
 	// Market
 	SaveMarketAnalysis(analysis *MarketAnalysis) error
-	GetMarketAnalysisUntil(marketId string, time time.Time, limit int) ([]*MarketAnalysis, error)
+	GetMarketAnalysisSince(marketId string, time time.Time, limit int) ([]*MarketAnalysis, error)
 }
