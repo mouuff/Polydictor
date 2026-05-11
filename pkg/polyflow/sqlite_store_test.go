@@ -630,3 +630,127 @@ func TestSaveMarketAnalysisSetsLookupTime(t *testing.T) {
 		t.Fatal("expected lookup time to be automatically set")
 	}
 }
+
+func TestGetUniqueSlugs(t *testing.T) {
+	store := newTestStore(t)
+	defer store.Close()
+
+	oldest := time.Now().
+		Add(-72 * time.Hour).
+		UTC().
+		Truncate(time.Second)
+
+	middle := time.Now().
+		Add(-48 * time.Hour).
+		UTC().
+		Truncate(time.Second)
+
+	newest := time.Now().
+		Add(-24 * time.Hour).
+		UTC().
+		Truncate(time.Second)
+
+	// btc-up (oldest slug)
+	err := store.SaveMarketAnalysis(&MarketAnalysis{
+		MarketId:   "market-1",
+		Slug:       "btc-up",
+		LookupTime: oldest,
+		Outcomes: []MarketOutcomeAnalysis{
+			{Outcome: "YES"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("failed to save analysis: %v", err)
+	}
+
+	// duplicate slug with newer lookup time
+	err = store.SaveMarketAnalysis(&MarketAnalysis{
+		MarketId:   "market-2",
+		Slug:       "btc-up",
+		LookupTime: newest,
+		Outcomes: []MarketOutcomeAnalysis{
+			{Outcome: "NO"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("failed to save analysis: %v", err)
+	}
+
+	// second unique slug
+	err = store.SaveMarketAnalysis(&MarketAnalysis{
+		MarketId:   "market-3",
+		Slug:       "eth-up",
+		LookupTime: middle,
+		Outcomes: []MarketOutcomeAnalysis{
+			{Outcome: "YES"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("failed to save analysis: %v", err)
+	}
+
+	results, err := store.GetUniqueSlugs()
+	if err != nil {
+		t.Fatalf("failed to get unique slugs: %v", err)
+	}
+
+	if len(results) != 2 {
+		t.Fatalf(
+			"unexpected slug count: got %d want %d",
+			len(results),
+			2,
+		)
+	}
+
+	// Ordered by oldest MIN(lookup_time)
+	if results[0].Slug != "btc-up" {
+		t.Fatalf(
+			"unexpected first slug: got %s want %s",
+			results[0].Slug,
+			"btc-up",
+		)
+	}
+
+	if results[1].Slug != "eth-up" {
+		t.Fatalf(
+			"unexpected second slug: got %s want %s",
+			results[1].Slug,
+			"eth-up",
+		)
+	}
+
+	// Most recent lookup for btc-up should be newest
+	if !results[0].MostRecentLookup.Equal(newest) {
+		t.Fatalf(
+			"unexpected most recent lookup: got %v want %v",
+			results[0].MostRecentLookup,
+			newest,
+		)
+	}
+
+	// eth-up only has one entry
+	if !results[1].MostRecentLookup.Equal(middle) {
+		t.Fatalf(
+			"unexpected eth-up lookup time: got %v want %v",
+			results[1].MostRecentLookup,
+			middle,
+		)
+	}
+}
+
+func TestGetUniqueSlugsEmpty(t *testing.T) {
+	store := newTestStore(t)
+	defer store.Close()
+
+	results, err := store.GetUniqueSlugs()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(results) != 0 {
+		t.Fatalf(
+			"expected empty results, got %d",
+			len(results),
+		)
+	}
+}

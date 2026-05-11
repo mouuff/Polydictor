@@ -311,6 +311,56 @@ func (s *SQLiteStore) GetMarketAnalysisUntil(
 }
 
 // ------------------------------------------------------------
+// Get all unique slugs sorted by oldest lookup time first
+// Also returns most recent lookup time for each slug
+// ------------------------------------------------------------
+
+func (s *SQLiteStore) GetUniqueSlugs() ([]SlugInfo, error) {
+
+	rows, err := s.db.Query(`
+		SELECT
+			slug,
+			MAX(lookup_time) as most_recent_lookup
+		FROM market_analysis
+		GROUP BY slug
+		ORDER BY MIN(lookup_time) ASC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []SlugInfo
+
+	for rows.Next() {
+		var slug string
+		var lookupTimeStr string
+
+		if err := rows.Scan(
+			&slug,
+			&lookupTimeStr,
+		); err != nil {
+			return nil, err
+		}
+
+		lookupTime, err := time.Parse(
+			time.RFC3339,
+			lookupTimeStr,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, SlugInfo{
+			Slug:             slug,
+			MostRecentLookup: lookupTime,
+		})
+	}
+
+	return results, rows.Err()
+}
+
+// ------------------------------------------------------------
 // Close DB
 // ------------------------------------------------------------
 

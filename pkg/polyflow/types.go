@@ -27,6 +27,11 @@ type ScoredUser struct {
 	LookupTime     time.Time
 }
 
+type SlugInfo struct {
+	Slug             string
+	MostRecentLookup time.Time
+}
+
 type MarketAnalyzer interface {
 	AnalyzeMarket(slug string) (*MarketAnalysis, error)
 }
