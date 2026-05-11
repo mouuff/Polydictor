@@ -110,7 +110,7 @@ func GetPriceForOutcome(market *polyapi.Market, outcome string) (float64, error)
 }
 
 func GetSlugFromURL(rawURL string) (string, error) {
-	parsed, err := url.Parse(rawURL)
+	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
 		return "", fmt.Errorf(
 			"failed to parse url: %w",
@@ -118,23 +118,37 @@ func GetSlugFromURL(rawURL string) (string, error) {
 		)
 	}
 
-	path := strings.Trim(parsed.Path, "/")
+	// Only process the path
+	// Query params like ?index=6 are ignored automatically
+	path := strings.Trim(parsedURL.Path, "/")
 
-	parts := strings.Split(path, "/")
+	pathParts := strings.Split(path, "/")
 
-	if len(parts) < 3 {
+	// Expected:
+	// /event/<slug>
+	// /event/<category>/<slug>
+	if len(pathParts) < 2 {
 		return "", fmt.Errorf(
-			"invalid polymarket url: %s",
+			"invalid polymarket event url: %s",
 			rawURL,
 		)
 	}
 
-	if parts[0] != "event" {
+	if pathParts[0] != "event" {
 		return "", fmt.Errorf(
-			"not an event url: %s",
+			"not a polymarket event url: %s",
 			rawURL,
 		)
 	}
 
-	return parts[len(parts)-1], nil
+	slug := pathParts[len(pathParts)-1]
+
+	if slug == "" {
+		return "", fmt.Errorf(
+			"missing slug in url: %s",
+			rawURL,
+		)
+	}
+
+	return slug, nil
 }

@@ -336,6 +336,11 @@ func TestGetSlugFromURL(t *testing.T) {
 			expected: "confirmed-case-of-hantavirus-in-us-by-may-15",
 		},
 		{
+			name:     "simple event url",
+			url:      "https://polymarket.com/event/confirmed-case-of-hantavirus-in-us-by-may-15?tab=positions",
+			expected: "confirmed-case-of-hantavirus-in-us-by-may-15",
+		},
+		{
 			name:     "nested event url",
 			url:      "https://polymarket.com/event/which-companies-announce-bankruptcy-before-2027/will-beyond-meat-announce-bankruptcy-before-2027-859-613-462-581-119",
 			expected: "will-beyond-meat-announce-bankruptcy-before-2027-859-613-462-581-119",
