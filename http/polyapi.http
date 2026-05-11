@@ -9,6 +9,9 @@ GET https://data-api.polymarket.com/v1/closed-positions
 GET https://gamma-api.polymarket.com/markets/slug/will-the-steam-machine-cost-700-or-more-at-release
 
 ###
+GET https://gamma-api.polymarket.com/markets/slug/will-beyond-meat-announce-bankruptcy-before-2027-859-613-462-581-119
+
+###
 GET https://data-api.polymarket.com/v1/holders
 ?limit=20
 &minBalance=1
