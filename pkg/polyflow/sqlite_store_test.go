@@ -346,7 +346,7 @@ func TestSaveAndGetMarketAnalysis(t *testing.T) {
 
 	results, err := store.GetMarketAnalysisUntil(
 		"market-1",
-		time.Now().Add(time.Hour),
+		time.Now().Add(-time.Hour),
 		10,
 	)
 	if err != nil {
@@ -611,7 +611,7 @@ func TestSaveMarketAnalysisSetsLookupTime(t *testing.T) {
 
 	results, err := store.GetMarketAnalysisUntil(
 		"market-auto-time",
-		time.Now().Add(time.Hour),
+		time.Now().Add(-time.Hour),
 		10,
 	)
 	if err != nil {

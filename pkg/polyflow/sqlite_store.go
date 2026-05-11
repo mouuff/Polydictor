@@ -256,7 +256,7 @@ func (s *SQLiteStore) GetMarketAnalysisUntil(
 			lookup_time
 		FROM market_analysis
 		WHERE market_id = ?
-		AND lookup_time <= ?
+		AND lookup_time >= ?
 		ORDER BY lookup_time DESC
 		LIMIT ?
 	`,

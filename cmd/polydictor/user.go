@@ -46,6 +46,8 @@ func (cmd *UserCmd) Run() error {
 		log.Fatalf("Failed to initialize SQLite store: %v", err)
 	}
 
+	defer db.Close()
+
 	var orchestrator = polyflow.NewAnalyzer(db)
 
 	user, err := orchestrator.GetScoredUser(cmd.id, "")

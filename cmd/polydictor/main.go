@@ -22,6 +22,7 @@ func RunSubCommand(args []string) error {
 	cmds := []SubCommand{
 		&AnalyzeCmd{},
 		&UserCmd{},
+		&Serve{},
 	}
 
 	if len(args) < 1 {
