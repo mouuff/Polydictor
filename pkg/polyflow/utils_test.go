@@ -322,3 +322,64 @@ func TestGetPriceForOutcomeEmptyPrices(t *testing.T) {
 		t.Fatal("expected error, got nil")
 	}
 }
+
+func TestGetSlugFromURL(t *testing.T) {
+	tests := []struct {
+		name        string
+		url         string
+		expected    string
+		expectError bool
+	}{
+		{
+			name:     "simple event url",
+			url:      "https://polymarket.com/event/confirmed-case-of-hantavirus-in-us-by-may-15",
+			expected: "confirmed-case-of-hantavirus-in-us-by-may-15",
+		},
+		{
+			name:     "nested event url",
+			url:      "https://polymarket.com/event/which-companies-announce-bankruptcy-before-2027/will-beyond-meat-announce-bankruptcy-before-2027-859-613-462-581-119",
+			expected: "will-beyond-meat-announce-bankruptcy-before-2027-859-613-462-581-119",
+		},
+		{
+			name:        "invalid url",
+			url:         "::::invalid-url",
+			expectError: true,
+		},
+		{
+			name:        "invalid path",
+			url:         "https://polymarket.com/not-event/test",
+			expectError: true,
+		},
+		{
+			name:        "missing slug",
+			url:         "https://polymarket.com/event",
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			got, err := GetSlugFromURL(tt.url)
+
+			if tt.expectError {
+				if err == nil {
+					t.Fatal("expected error, got nil")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if got != tt.expected {
+				t.Fatalf(
+					"unexpected slug: got %s want %s",
+					got,
+					tt.expected,
+				)
+			}
+		})
+	}
+}

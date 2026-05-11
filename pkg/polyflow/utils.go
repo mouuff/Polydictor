@@ -2,7 +2,9 @@ package polyflow
 
 import (
 	"fmt"
+	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/mouuff/polydictor/pkg/polyapi"
 )
@@ -105,4 +107,34 @@ func GetPriceForOutcome(market *polyapi.Market, outcome string) (float64, error)
 	}
 
 	return priceFloat, nil
+}
+
+func GetSlugFromURL(rawURL string) (string, error) {
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return "", fmt.Errorf(
+			"failed to parse url: %w",
+			err,
+		)
+	}
+
+	path := strings.Trim(parsed.Path, "/")
+
+	parts := strings.Split(path, "/")
+
+	if len(parts) < 3 {
+		return "", fmt.Errorf(
+			"invalid polymarket url: %s",
+			rawURL,
+		)
+	}
+
+	if parts[0] != "event" {
+		return "", fmt.Errorf(
+			"not an event url: %s",
+			rawURL,
+		)
+	}
+
+	return parts[len(parts)-1], nil
 }
