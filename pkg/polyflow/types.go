@@ -2,6 +2,12 @@ package polyflow
 
 import "time"
 
+type TrackedMarket struct {
+	URL      string
+	MarketId string
+	Slug     string
+}
+
 type MarketOutcomeAnalysis struct {
 	Price              float64
 	Outcome            string

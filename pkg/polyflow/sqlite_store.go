@@ -63,6 +63,17 @@ func (s *SQLiteStore) createTables() error {
 	}
 
 	_, err = s.db.Exec(`
+		CREATE TABLE IF NOT EXISTS tracked_markets (
+			market_id TEXT PRIMARY KEY,
+			url TEXT NOT NULL,
+			slug TEXT NOT NULL
+		)
+	`)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.db.Exec(`
 		CREATE INDEX IF NOT EXISTS idx_market_analysis_market_id
 		ON market_analysis(market_id)
 	`)
@@ -74,6 +85,14 @@ func (s *SQLiteStore) createTables() error {
 		CREATE INDEX IF NOT EXISTS idx_market_analysis_lookup_time
 		ON market_analysis(lookup_time)
 	`)
+
+	_, err = s.db.Exec(`
+		CREATE INDEX IF NOT EXISTS idx_tracked_markets_market_id
+		ON tracked_markets(market_id)
+	`)
+	if err != nil {
+		return err
+	}
 
 	return err
 }
@@ -308,6 +327,64 @@ func (s *SQLiteStore) GetMarketAnalysisSince(
 	}
 
 	return analyses, rows.Err()
+}
+
+func (s *SQLiteStore) SaveTrackedMarket(m *TrackedMarket) error {
+	_, err := s.db.Exec(`
+		INSERT OR REPLACE INTO tracked_markets (
+			url,
+			market_id,
+			slug
+		)
+		VALUES (?, ?, ?)
+	`,
+		m.URL,
+		m.MarketId,
+		m.Slug,
+	)
+
+	return err
+}
+
+func (s *SQLiteStore) GetTrackedMarkets() ([]*TrackedMarket, error) {
+	rows, err := s.db.Query(`
+		SELECT
+			url,
+			market_id,
+			slug
+		FROM tracked_markets
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []*TrackedMarket
+
+	for rows.Next() {
+		var m TrackedMarket
+
+		if err := rows.Scan(
+			&m.URL,
+			&m.MarketId,
+			&m.Slug,
+		); err != nil {
+			return nil, err
+		}
+
+		results = append(results, &m)
+	}
+
+	return results, rows.Err()
+}
+
+func (s *SQLiteStore) DeleteTrackedMarket(marketId string) error {
+	_, err := s.db.Exec(`
+		DELETE FROM tracked_markets
+		WHERE market_id = ?
+	`, marketId)
+
+	return err
 }
 
 // ------------------------------------------------------------

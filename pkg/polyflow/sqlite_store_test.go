@@ -630,3 +630,81 @@ func TestSaveMarketAnalysisSetsLookupTime(t *testing.T) {
 		t.Fatal("expected lookup time to be automatically set")
 	}
 }
+
+func TestTrackedMarkets_SaveAndGetAll(t *testing.T) {
+	store := newTestStore(t)
+	defer store.Close()
+
+	inputs := []TrackedMarket{
+		{
+			MarketId: "m1",
+			URL:      "https://polymarket.com/event/a",
+			Slug:     "a",
+		},
+		{
+			MarketId: "m2",
+			URL:      "https://polymarket.com/event/b",
+			Slug:     "b",
+		},
+	}
+
+	for _, m := range inputs {
+		err := store.SaveTrackedMarket(&m)
+		if err != nil {
+			t.Fatalf("failed to save: %v", err)
+		}
+	}
+
+	results, err := store.GetTrackedMarkets()
+	if err != nil {
+		t.Fatalf("failed to get: %v", err)
+	}
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2, got %d", len(results))
+	}
+
+	// basic validation
+	found := map[string]bool{}
+	for _, r := range results {
+		found[r.MarketId] = true
+	}
+
+	for _, m := range inputs {
+		if !found[m.MarketId] {
+			t.Fatalf("missing market %s", m.MarketId)
+		}
+	}
+}
+
+func TestTrackedMarkets_DeleteByMarketId(t *testing.T) {
+	store := newTestStore(t)
+	defer store.Close()
+
+	m := &TrackedMarket{
+		MarketId: "m-delete",
+		URL:      "https://polymarket.com/event/x",
+		Slug:     "x",
+	}
+
+	err := store.SaveTrackedMarket(m)
+	if err != nil {
+		t.Fatalf("failed to save: %v", err)
+	}
+
+	err = store.DeleteTrackedMarket("m-delete")
+	if err != nil {
+		t.Fatalf("failed to delete: %v", err)
+	}
+
+	results, err := store.GetTrackedMarkets()
+	if err != nil {
+		t.Fatalf("failed to get: %v", err)
+	}
+
+	for _, r := range results {
+		if r.MarketId == "m-delete" {
+			t.Fatalf("market was not deleted")
+		}
+	}
+}
