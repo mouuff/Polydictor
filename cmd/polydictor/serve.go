@@ -86,6 +86,11 @@ func (cmd *Serve) Run() error {
 			return
 		}
 
+		if len(marketAnalysis) == 0 {
+			http.Error(w, "No items found", http.StatusNoContent)
+			return
+		}
+
 		// Set JSON content type
 		w.Header().Set("Content-Type", "application/json")
 
@@ -99,7 +104,8 @@ func (cmd *Serve) Run() error {
 	mux.HandleFunc("/tracked", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Serving /tracked")
 
-		if r.Method == http.MethodGet {
+		switch r.Method {
+		case http.MethodGet:
 			markets, err := db.GetTrackedMarkets()
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Failed to fetch items: %v", err), http.StatusInternalServerError)
@@ -114,8 +120,9 @@ func (cmd *Serve) Run() error {
 				http.Error(w, fmt.Sprintf("Failed to encode response: %v", err), http.StatusInternalServerError)
 				return
 			}
-		}
-		if r.Method == http.MethodPost {
+
+			return
+		case http.MethodPost:
 			url := r.URL.Query().Get("url")
 
 			if url == "" {
@@ -150,7 +157,8 @@ func (cmd *Serve) Run() error {
 				MarketId: market.Id,
 				Slug:     market.Slug,
 			})
-		} else {
+			return
+		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
 		}

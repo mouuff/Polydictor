@@ -1,0 +1,11 @@
+
+###
+GET http://localhost:8081/get-market-analysis?marketId=665374
+
+
+###
+GET http://localhost:8081/tracked
+
+###
+POST http://localhost:8081/tracked?url=https://polymarket.com/event/will-the-us-invade-iran-before-2027
+
