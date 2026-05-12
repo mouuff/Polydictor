@@ -67,7 +67,7 @@ func (s *SQLiteStore) createTables() error {
 			market_id TEXT PRIMARY KEY,
 			url TEXT NOT NULL,
 			image TEXT NOT NULL,
-			title TEXT NOT NULL,
+			question TEXT NOT NULL,
 			slug TEXT NOT NULL
 		)
 	`)
@@ -336,7 +336,7 @@ func (s *SQLiteStore) SaveTrackedMarket(m *TrackedMarket) error {
 		INSERT OR REPLACE INTO tracked_markets (
 			url,
 			image,
-			title,
+			question,
 			market_id,
 			slug
 		)
@@ -344,7 +344,7 @@ func (s *SQLiteStore) SaveTrackedMarket(m *TrackedMarket) error {
 	`,
 		m.URL,
 		m.Image,
-		m.Title,
+		m.Question,
 		m.MarketId,
 		m.Slug,
 	)
@@ -357,7 +357,7 @@ func (s *SQLiteStore) GetTrackedMarkets() ([]*TrackedMarket, error) {
 		SELECT
 			url,
 			image,
-			title,
+			question,
 			market_id,
 			slug
 		FROM tracked_markets
@@ -375,7 +375,7 @@ func (s *SQLiteStore) GetTrackedMarkets() ([]*TrackedMarket, error) {
 		if err := rows.Scan(
 			&m.URL,
 			&m.Image,
-			&m.Title,
+			&m.Question,
 			&m.MarketId,
 			&m.Slug,
 		); err != nil {

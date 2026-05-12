@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -9,6 +10,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/mouuff/polydictor/pkg/polyapi"
 	"github.com/mouuff/polydictor/pkg/polyflow"
 	"github.com/rs/cors"
 )
@@ -46,6 +48,9 @@ func (cmd *Serve) Run() error {
 		log.Println("Please specify a database using -datafile (e.g. -datafile data.json)")
 		return errors.New("-datafile parameter required")
 	}
+
+	ctx := context.Background()
+	api := polyapi.NewPolyapi()
 
 	db, err := polyflow.NewSQLiteStore(cmd.dbPath)
 	if err != nil {
@@ -89,6 +94,43 @@ func (cmd *Serve) Run() error {
 			http.Error(w, fmt.Sprintf("Failed to encode response: %v", err), http.StatusInternalServerError)
 			return
 		}
+	})
+
+	mux.HandleFunc("/track-market", func(w http.ResponseWriter, r *http.Request) {
+		log.Println("Serving /track-market")
+
+		// Only allow POST requests
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		url := r.URL.Query().Get("url")
+
+		if url == "" {
+			http.Error(w, "Please specify the 'url' parameter", http.StatusBadRequest)
+			return
+		}
+
+		slug, err := polyflow.GetSlugFromURL(url)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to extract slug: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		market, err := api.GetMarketBySlug(ctx, slug)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to fetch market: %v", err), http.StatusNotFound)
+			return
+		}
+
+		db.SaveTrackedMarket(&polyflow.TrackedMarket{
+			URL:      url,
+			Image:    market.Image,
+			Question: market.Question,
+			MarketId: market.Id,
+			Slug:     market.Slug,
+		})
 	})
 
 	// Start the server
