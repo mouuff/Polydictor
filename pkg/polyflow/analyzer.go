@@ -176,6 +176,7 @@ func (o *Analyzer) GetScoredUser(proxyWallet, name string) (*ScoredUser, error) 
 		PredictionRate: GetPredictionRate(closedPositions),
 		ProfitRate:     GetProfitRate(closedPositions),
 		Profit:         GetProfit(closedPositions),
+		TotalBets:      len(closedPositions),
 		LookupTime:     time.Now(),
 	}
 

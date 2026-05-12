@@ -42,6 +42,7 @@ func (s *SQLiteStore) createTables() error {
 			prediction_rate REAL NOT NULL,
 			profit_rate REAL NOT NULL,
 			profit REAL NOT NULL,
+			total_bets INTEGER NOT NULL,
 			lookup_time TEXT NOT NULL
 		)
 	`)
@@ -118,15 +119,17 @@ func (s *SQLiteStore) SaveScoredUser(
 			prediction_rate,
 			profit_rate,
 			profit,
+			total_bets,
 			lookup_time
 		)
-		VALUES (?, ?, ?, ?, ?, ?)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
 	`,
 		user.ProxyWallet,
 		user.Name,
 		user.PredictionRate,
 		user.ProfitRate,
 		user.Profit,
+		user.TotalBets,
 		user.LookupTime.Format(time.RFC3339),
 	)
 
@@ -173,6 +176,7 @@ func (s *SQLiteStore) GetUser(
 			prediction_rate,
 			profit_rate,
 			profit,
+			total_bets,
 			lookup_time
 		FROM scored_users
 		WHERE proxy_wallet = ?
@@ -182,6 +186,7 @@ func (s *SQLiteStore) GetUser(
 		&user.PredictionRate,
 		&user.ProfitRate,
 		&user.Profit,
+		&user.TotalBets,
 		&lookupTimeStr,
 	)
 

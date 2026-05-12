@@ -32,6 +32,7 @@ type ScoredUser struct {
 	PredictionRate float64
 	ProfitRate     float64
 	Profit         float64
+	TotalBets      int
 	LookupTime     time.Time
 }
 

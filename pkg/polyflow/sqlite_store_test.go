@@ -31,6 +31,7 @@ func TestSaveAndGetUser(t *testing.T) {
 		PredictionRate: 0.75,
 		ProfitRate:     1.42,
 		Profit:         523.12,
+		TotalBets:      42,
 		LookupTime:     now,
 	}
 
@@ -53,6 +54,14 @@ func TestSaveAndGetUser(t *testing.T) {
 			"unexpected proxy wallet: got %s want %s",
 			got.ProxyWallet,
 			expected.ProxyWallet,
+		)
+	}
+
+	if got.TotalBets != expected.TotalBets {
+		t.Errorf(
+			"unexpected total bets: got %d want %d",
+			got.TotalBets,
+			expected.TotalBets,
 		)
 	}
 
@@ -107,6 +116,7 @@ func TestGetFreshScoredUserDeletesExpiredUser(t *testing.T) {
 		PredictionRate: 0.5,
 		ProfitRate:     1.2,
 		Profit:         100,
+		TotalBets:      42,
 		LookupTime:     time.Now().Add(-48 * time.Hour),
 	}
 
@@ -211,6 +221,7 @@ func TestDeleteScoredUser(t *testing.T) {
 		PredictionRate: 0.5,
 		ProfitRate:     0.9,
 		Profit:         100,
+		TotalBets:      42,
 		LookupTime:     time.Now().UTC(),
 	}
 
@@ -244,6 +255,7 @@ func TestSaveScoredUserUpdatesExisting(t *testing.T) {
 		PredictionRate: 0.1,
 		ProfitRate:     0.2,
 		Profit:         50,
+		TotalBets:      42,
 		LookupTime:     time.Now().UTC(),
 	}
 
@@ -254,6 +266,7 @@ func TestSaveScoredUserUpdatesExisting(t *testing.T) {
 
 	user.Name = "Updated"
 	user.Profit = 999
+	user.TotalBets = 100
 
 	err = store.SaveScoredUser(user)
 	if err != nil {
@@ -270,6 +283,14 @@ func TestSaveScoredUserUpdatesExisting(t *testing.T) {
 			"unexpected updated name: got %s want %s",
 			got.Name,
 			"Updated",
+		)
+	}
+
+	if got.TotalBets != 100 {
+		t.Errorf(
+			"unexpected updated total bets: got %d want %d",
+			got.TotalBets,
+			100,
 		)
 	}
 
