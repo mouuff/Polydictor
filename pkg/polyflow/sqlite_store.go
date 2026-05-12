@@ -66,6 +66,7 @@ func (s *SQLiteStore) createTables() error {
 		CREATE TABLE IF NOT EXISTS tracked_markets (
 			market_id TEXT PRIMARY KEY,
 			url TEXT NOT NULL,
+			image TEXT NOT NULL,
 			slug TEXT NOT NULL
 		)
 	`)
@@ -333,12 +334,14 @@ func (s *SQLiteStore) SaveTrackedMarket(m *TrackedMarket) error {
 	_, err := s.db.Exec(`
 		INSERT OR REPLACE INTO tracked_markets (
 			url,
+			image,
 			market_id,
 			slug
 		)
 		VALUES (?, ?, ?)
 	`,
 		m.URL,
+		m.Image,
 		m.MarketId,
 		m.Slug,
 	)
@@ -350,6 +353,7 @@ func (s *SQLiteStore) GetTrackedMarkets() ([]*TrackedMarket, error) {
 	rows, err := s.db.Query(`
 		SELECT
 			url,
+			image,
 			market_id,
 			slug
 		FROM tracked_markets
@@ -366,6 +370,7 @@ func (s *SQLiteStore) GetTrackedMarkets() ([]*TrackedMarket, error) {
 
 		if err := rows.Scan(
 			&m.URL,
+			&m.Image,
 			&m.MarketId,
 			&m.Slug,
 		); err != nil {

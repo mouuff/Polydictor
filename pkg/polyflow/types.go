@@ -4,6 +4,7 @@ import "time"
 
 type TrackedMarket struct {
 	URL      string
+	Image    string
 	MarketId string
 	Slug     string
 }
