@@ -21,6 +21,7 @@ func RunSubCommand(args []string) error {
 
 	cmds := []SubCommand{
 		&AnalyzeCmd{},
+		&AnalyzeLoopCmd{},
 		&UserCmd{},
 		&Serve{},
 	}
