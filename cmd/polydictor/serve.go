@@ -75,15 +75,8 @@ func (cmd *Serve) Run() error {
 	mux.Handle("/", http.FileServer(http.Dir("./web-ui/dist")))
 
 	// API routes
-	mux.HandleFunc(
-		"/get-market-analysis",
-		cmd.handleGetMarketAnalysis,
-	)
-
-	mux.HandleFunc(
-		"/tracked",
-		cmd.handleTrackedMarkets,
-	)
+	mux.HandleFunc("/get-market-analysis", cmd.handleGetMarketAnalysis)
+	mux.HandleFunc("/tracked", cmd.handleTrackedMarkets)
 
 	log.Println("Server starting on :8081...")
 
@@ -100,19 +93,12 @@ func (cmd *Serve) Run() error {
 // Handlers
 // ------------------------------------------------------------
 
-func (cmd *Serve) handleGetMarketAnalysis(
-	w http.ResponseWriter,
-	r *http.Request,
-) {
+func (cmd *Serve) handleGetMarketAnalysis(w http.ResponseWriter, r *http.Request) {
 
 	log.Println("Serving /get-market-analysis")
 
 	if r.Method != http.MethodGet {
-		http.Error(
-			w,
-			"Method not allowed",
-			http.StatusMethodNotAllowed,
-		)
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -132,11 +118,7 @@ func (cmd *Serve) handleGetMarketAnalysis(
 	if daysStr := r.URL.Query().Get("days"); daysStr != "" {
 		parsedDays, err := strconv.Atoi(daysStr)
 		if err != nil || parsedDays <= 0 {
-			http.Error(
-				w,
-				"Invalid 'days' parameter",
-				http.StatusBadRequest,
-			)
+			http.Error(w, "Invalid 'days' parameter", http.StatusBadRequest)
 			return
 		}
 
@@ -146,11 +128,7 @@ func (cmd *Serve) handleGetMarketAnalysis(
 	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
 		parsedLimit, err := strconv.Atoi(limitStr)
 		if err != nil || parsedLimit <= 0 {
-			http.Error(
-				w,
-				"Invalid 'limit' parameter",
-				http.StatusBadRequest,
-			)
+			http.Error(w, "Invalid 'limit' parameter", http.StatusBadRequest)
 			return
 		}
 
@@ -159,29 +137,18 @@ func (cmd *Serve) handleGetMarketAnalysis(
 
 	since := time.Now().AddDate(0, 0, -days)
 
-	marketAnalysis, err := cmd.db.GetMarketAnalysisSince(
-		marketId,
-		since,
-		limit,
-	)
+	marketAnalysis, err := cmd.db.GetMarketAnalysisSince(marketId, since, limit)
 	if err != nil {
 		http.Error(
 			w,
-			fmt.Sprintf(
-				"Failed to fetch market analysis: %v",
-				err,
-			),
+			fmt.Sprintf("Failed to fetch market analysis: %v", err),
 			http.StatusInternalServerError,
 		)
 		return
 	}
 
 	if len(marketAnalysis) == 0 {
-		http.Error(
-			w,
-			"No items found",
-			http.StatusNoContent,
-		)
+		http.Error(w, "No items found", http.StatusNoContent)
 		return
 	}
 
@@ -190,25 +157,18 @@ func (cmd *Serve) handleGetMarketAnalysis(
 	if err := json.NewEncoder(w).Encode(marketAnalysis); err != nil {
 		http.Error(
 			w,
-			fmt.Sprintf(
-				"Failed to encode response: %v",
-				err,
-			),
+			fmt.Sprintf("Failed to encode response: %v", err),
 			http.StatusInternalServerError,
 		)
 		return
 	}
 }
 
-func (cmd *Serve) handleTrackedMarkets(
-	w http.ResponseWriter,
-	r *http.Request,
-) {
+func (cmd *Serve) handleTrackedMarkets(w http.ResponseWriter, r *http.Request) {
 
 	log.Println("Serving /tracked")
 
 	switch r.Method {
-
 	case http.MethodGet:
 		cmd.handleGetTrackedMarkets(w, r)
 
@@ -216,27 +176,17 @@ func (cmd *Serve) handleTrackedMarkets(
 		cmd.handleAddTrackedMarket(w, r)
 
 	default:
-		http.Error(
-			w,
-			"Method not allowed",
-			http.StatusMethodNotAllowed,
-		)
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
-func (cmd *Serve) handleGetTrackedMarkets(
-	w http.ResponseWriter,
-	r *http.Request,
-) {
+func (cmd *Serve) handleGetTrackedMarkets(w http.ResponseWriter, r *http.Request) {
 
 	markets, err := cmd.db.GetTrackedMarkets()
 	if err != nil {
 		http.Error(
 			w,
-			fmt.Sprintf(
-				"Failed to fetch tracked markets: %v",
-				err,
-			),
+			fmt.Sprintf("Failed to fetch tracked markets: %v", err),
 			http.StatusInternalServerError,
 		)
 		return
@@ -247,29 +197,19 @@ func (cmd *Serve) handleGetTrackedMarkets(
 	if err := json.NewEncoder(w).Encode(markets); err != nil {
 		http.Error(
 			w,
-			fmt.Sprintf(
-				"Failed to encode response: %v",
-				err,
-			),
+			fmt.Sprintf("Failed to encode response: %v", err),
 			http.StatusInternalServerError,
 		)
 		return
 	}
 }
 
-func (cmd *Serve) handleAddTrackedMarket(
-	w http.ResponseWriter,
-	r *http.Request,
-) {
+func (cmd *Serve) handleAddTrackedMarket(w http.ResponseWriter, r *http.Request) {
 
 	url := r.URL.Query().Get("url")
 
 	if url == "" {
-		http.Error(
-			w,
-			"Please specify the 'url' parameter",
-			http.StatusBadRequest,
-		)
+		http.Error(w, "Please specify the 'url' parameter", http.StatusBadRequest)
 		return
 	}
 
@@ -277,36 +217,23 @@ func (cmd *Serve) handleAddTrackedMarket(
 	if err != nil {
 		http.Error(
 			w,
-			fmt.Sprintf(
-				"Failed to extract slug: %v",
-				err,
-			),
+			fmt.Sprintf("Failed to extract slug: %v", err),
 			http.StatusBadRequest,
 		)
 		return
 	}
 
-	market, err := cmd.api.GetMarketBySlug(
-		cmd.ctx,
-		slug,
-	)
+	market, err := cmd.api.GetMarketBySlug(cmd.ctx, slug)
 	if err != nil {
 
 		var polyErr *polyapi.PolyError
 
 		if errors.As(err, &polyErr) {
-			http.Error(
-				w,
-				polyErr.Err,
-				polyErr.StatusCode,
-			)
+			http.Error(w, polyErr.Err, polyErr.StatusCode)
 		} else {
 			http.Error(
 				w,
-				fmt.Sprintf(
-					"Failed to fetch market: %v",
-					err,
-				),
+				fmt.Sprintf("Failed to fetch market: %v", err),
 				http.StatusInternalServerError,
 			)
 		}
@@ -314,22 +241,17 @@ func (cmd *Serve) handleAddTrackedMarket(
 		return
 	}
 
-	err = cmd.db.SaveTrackedMarket(
-		&polyflow.TrackedMarket{
-			URL:      url,
-			Image:    market.Image,
-			Question: market.Question,
-			MarketId: market.Id,
-			Slug:     market.Slug,
-		},
-	)
+	err = cmd.db.SaveTrackedMarket(&polyflow.TrackedMarket{
+		URL:      url,
+		Image:    market.Image,
+		Question: market.Question,
+		MarketId: market.Id,
+		Slug:     market.Slug,
+	})
 	if err != nil {
 		http.Error(
 			w,
-			fmt.Sprintf(
-				"Failed to save tracked market: %v",
-				err,
-			),
+			fmt.Sprintf("Failed to save tracked market: %v", err),
 			http.StatusInternalServerError,
 		)
 		return
