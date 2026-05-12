@@ -96,49 +96,48 @@ func (cmd *Serve) Run() error {
 		}
 	})
 
-	mux.HandleFunc("/track-market", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Serving /track-market")
+	mux.HandleFunc("/tracked", func(w http.ResponseWriter, r *http.Request) {
+		log.Println("Serving /tracked")
 
-		// Only allow POST requests
-		if r.Method != http.MethodPost {
+		if r.Method == http.MethodPost {
+			url := r.URL.Query().Get("url")
+
+			if url == "" {
+				http.Error(w, "Please specify the 'url' parameter", http.StatusBadRequest)
+				return
+			}
+
+			slug, err := polyflow.GetSlugFromURL(url)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Failed to extract slug: %v", err), http.StatusBadRequest)
+				return
+			}
+
+			market, err := api.GetMarketBySlug(ctx, slug)
+			if err != nil {
+
+				var polyErr *polyapi.PolyError
+
+				if errors.As(err, &polyErr) {
+					http.Error(w, polyErr.Err, polyErr.StatusCode)
+				} else {
+					http.Error(w, fmt.Sprintf("Failed to fetch market: %v", err), http.StatusInternalServerError)
+				}
+
+				return
+			}
+
+			db.SaveTrackedMarket(&polyflow.TrackedMarket{
+				URL:      url,
+				Image:    market.Image,
+				Question: market.Question,
+				MarketId: market.Id,
+				Slug:     market.Slug,
+			})
+		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-
-		url := r.URL.Query().Get("url")
-
-		if url == "" {
-			http.Error(w, "Please specify the 'url' parameter", http.StatusBadRequest)
-			return
-		}
-
-		slug, err := polyflow.GetSlugFromURL(url)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Failed to extract slug: %v", err), http.StatusBadRequest)
-			return
-		}
-
-		market, err := api.GetMarketBySlug(ctx, slug)
-		if err != nil {
-
-			var polyErr *polyapi.PolyError
-
-			if errors.As(err, &polyErr) {
-				http.Error(w, polyErr.Err, polyErr.StatusCode)
-			} else {
-				http.Error(w, fmt.Sprintf("Failed to fetch market: %v", err), http.StatusInternalServerError)
-			}
-
-			return
-		}
-
-		db.SaveTrackedMarket(&polyflow.TrackedMarket{
-			URL:      url,
-			Image:    market.Image,
-			Question: market.Question,
-			MarketId: market.Id,
-			Slug:     market.Slug,
-		})
 	})
 
 	// Start the server
