@@ -3,7 +3,6 @@ package polyapi
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -107,10 +106,13 @@ func (c *Polyapi) limitersFor(req *http.Request) []*rate.Limiter {
 func (c *Polyapi) handleError(resp *http.Response) error {
 	var apiErr PolyError
 	if err := json.NewDecoder(resp.Body).Decode(&apiErr); err == nil && apiErr.Error() != "" {
+		apiErr.StatusCode = resp.StatusCode
 		return &apiErr
 	}
 
-	return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	apiErr.StatusCode = resp.StatusCode
+	apiErr.Err = ""
+	return &apiErr
 }
 
 // --------------------

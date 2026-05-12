@@ -65,7 +65,8 @@ type ClosedPosition struct {
 
 // API error format
 type PolyError struct {
-	Err string `json:"error"`
+	StatusCode int    `json:"statusCode"`
+	Err        string `json:"error"`
 }
 
 func (e *PolyError) Error() string {

@@ -120,7 +120,15 @@ func (cmd *Serve) Run() error {
 
 		market, err := api.GetMarketBySlug(ctx, slug)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Failed to fetch market: %v", err), http.StatusNotFound)
+
+			var polyErr *polyapi.PolyError
+
+			if errors.As(err, &polyErr) {
+				http.Error(w, polyErr.Err, polyErr.StatusCode)
+			} else {
+				http.Error(w, fmt.Sprintf("Failed to fetch market: %v", err), http.StatusInternalServerError)
+			}
+
 			return
 		}
 
