@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/mouuff/polydictor/pkg/polyapi"
@@ -73,16 +74,62 @@ func (cmd *Serve) Run() error {
 		}
 
 		marketId := r.URL.Query().Get("marketId")
-
 		if marketId == "" {
-			http.Error(w, "Please specify the 'marketId' parameter", http.StatusBadRequest)
+			http.Error(
+				w,
+				"Please specify the 'marketId' parameter",
+				http.StatusBadRequest,
+			)
 			return
 		}
 
-		// Fetch all items
-		marketAnalysis, err := db.GetMarketAnalysisSince(marketId, time.Now().AddDate(0, 0, -7), 10000)
+		// Optional query params
+		// Example:
+		// ?days=30&limit=500
+		days := 7
+		limit := 10000
+
+		if daysStr := r.URL.Query().Get("days"); daysStr != "" {
+			parsedDays, err := strconv.Atoi(daysStr)
+			if err != nil || parsedDays <= 0 {
+				http.Error(
+					w,
+					"Invalid 'days' parameter",
+					http.StatusBadRequest,
+				)
+				return
+			}
+
+			days = parsedDays
+		}
+
+		if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+			parsedLimit, err := strconv.Atoi(limitStr)
+			if err != nil || parsedLimit <= 0 {
+				http.Error(
+					w,
+					"Invalid 'limit' parameter",
+					http.StatusBadRequest,
+				)
+				return
+			}
+
+			limit = parsedLimit
+		}
+
+		since := time.Now().AddDate(0, 0, -days)
+
+		marketAnalysis, err := db.GetMarketAnalysisSince(
+			marketId,
+			since,
+			limit,
+		)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Failed to fetch items: %v", err), http.StatusInternalServerError)
+			http.Error(
+				w,
+				fmt.Sprintf("Failed to fetch items: %v", err),
+				http.StatusInternalServerError,
+			)
 			return
 		}
 
@@ -96,7 +143,11 @@ func (cmd *Serve) Run() error {
 
 		// Encode and send the response
 		if err := json.NewEncoder(w).Encode(marketAnalysis); err != nil {
-			http.Error(w, fmt.Sprintf("Failed to encode response: %v", err), http.StatusInternalServerError)
+			http.Error(
+				w,
+				fmt.Sprintf("Failed to encode response: %v", err),
+				http.StatusInternalServerError,
+			)
 			return
 		}
 	})
