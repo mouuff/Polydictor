@@ -99,6 +99,22 @@ func (cmd *Serve) Run() error {
 	mux.HandleFunc("/tracked", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Serving /tracked")
 
+		if r.Method == http.MethodGet {
+			markets, err := db.GetTrackedMarkets()
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Failed to fetch items: %v", err), http.StatusInternalServerError)
+				return
+			}
+
+			// Set JSON content type
+			w.Header().Set("Content-Type", "application/json")
+
+			// Encode and send the response
+			if err := json.NewEncoder(w).Encode(markets); err != nil {
+				http.Error(w, fmt.Sprintf("Failed to encode response: %v", err), http.StatusInternalServerError)
+				return
+			}
+		}
 		if r.Method == http.MethodPost {
 			url := r.URL.Query().Get("url")
 
