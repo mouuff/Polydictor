@@ -640,13 +640,15 @@ func TestTrackedMarkets_SaveAndGetAll(t *testing.T) {
 			MarketId: "m1",
 			URL:      "https://polymarket.com/event/a",
 			Slug:     "a",
-			Image:    "testimage",
+			Title:    "title1",
+			Image:    "testimage1",
 		},
 		{
 			MarketId: "m2",
 			URL:      "https://polymarket.com/event/b",
 			Slug:     "b",
-			Image:    "testimage",
+			Title:    "title2",
+			Image:    "testimage2",
 		},
 	}
 
@@ -672,13 +674,24 @@ func TestTrackedMarkets_SaveAndGetAll(t *testing.T) {
 		found[r.MarketId] = true
 	}
 
+	if inputs[0].Title != "title1" {
+		t.Fatalf("unexpected title: got %s", inputs[0].Title)
+	}
+	if inputs[1].Title != "title2" {
+		t.Fatalf("unexpected title: got %s", inputs[1].Title)
+	}
+
+	if inputs[0].Image != "testimage1" {
+		t.Fatalf("unexpected image: got %s", inputs[0].Image)
+	}
+
+	if inputs[1].Image != "testimage2" {
+		t.Fatalf("unexpected image: got %s", inputs[1].Image)
+	}
+
 	for _, m := range inputs {
 		if !found[m.MarketId] {
 			t.Fatalf("missing market %s", m.MarketId)
-		}
-
-		if m.Image != "testimage" {
-			t.Fatalf("unexpected image: got %s", m.Image)
 		}
 	}
 }
