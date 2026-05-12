@@ -26,7 +26,7 @@ func (cmd *AnalyzeLoopCmd) Name() string {
 func (cmd *AnalyzeLoopCmd) Init(args []string) error {
 	cmd.flagSet = flag.NewFlagSet(cmd.Name(), flag.ExitOnError)
 	cmd.flagSet.StringVar(&cmd.dbPath, "db", "./store.db", "database path")
-	cmd.flagSet.IntVar(&cmd.frequencyMinutes, "frequency", 10, "frequency in minutes")
+	cmd.flagSet.IntVar(&cmd.frequencyMinutes, "frequency", 15, "frequency in minutes")
 	return cmd.flagSet.Parse(args)
 }
 
@@ -42,6 +42,8 @@ func (cmd *AnalyzeLoopCmd) Run() error {
 		log.Fatalf("Failed to initialize SQLite store: %v", err)
 	}
 	defer db.Close()
+
+	log.Printf("Frequency minutes: %d", cmd.frequencyMinutes)
 
 	orchestrator := polyflow.NewAnalyzer(db)
 	lastAnalyzed := map[string]time.Time{}
