@@ -17,7 +17,7 @@
 
         body {
             margin: 0;
-            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-family: Inter, system-ui, sans-serif;
             background: #0f172a;
             color: #e2e8f0;
             height: 100vh;
@@ -48,7 +48,6 @@
             font-size: 22px;
             font-weight: 700;
             margin-bottom: 18px;
-            letter-spacing: -0.5px;
         }
 
         .market-form {
@@ -64,7 +63,6 @@
             background: #1f2937;
             color: white;
             outline: none;
-            transition: 0.2s;
         }
 
         .market-form input:focus {
@@ -73,14 +71,13 @@
         }
 
         .market-form button {
+            border: none;
             background: #2563eb;
             color: white;
-            border: none;
-            padding: 0 18px;
             border-radius: 12px;
+            padding: 0 18px;
             cursor: pointer;
             font-weight: 600;
-            transition: 0.2s;
         }
 
         .market-form button:hover {
@@ -88,9 +85,9 @@
         }
 
         .market-list {
+            flex: 1;
             overflow-y: auto;
             padding: 12px;
-            flex: 1;
         }
 
         .market-card {
@@ -98,11 +95,11 @@
             gap: 14px;
             padding: 14px;
             border-radius: 16px;
+            margin-bottom: 10px;
             cursor: pointer;
             transition: 0.2s;
-            margin-bottom: 10px;
-            border: 1px solid transparent;
             background: rgba(255, 255, 255, 0.02);
+            border: 1px solid transparent;
         }
 
         .market-card:hover {
@@ -156,7 +153,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(15, 23, 42, 0.8);
+            background: rgba(15, 23, 42, 0.85);
             backdrop-filter: blur(8px);
         }
 
@@ -166,7 +163,7 @@
         }
 
         .topbar-left p {
-            margin: 6px 0 0;
+            margin-top: 6px;
             color: #94a3b8;
             font-size: 14px;
         }
@@ -192,20 +189,20 @@
             color: #cbd5e1;
         }
 
-        .control-group select,
-        .control-group input {
+        .control-group select {
             background: transparent;
             border: none;
             color: white;
             outline: none;
-            font-size: 14px;
         }
+
+        /* METRICS */
 
         .metrics {
             display: flex;
             gap: 10px;
-            padding: 16px 24px 0;
             flex-wrap: wrap;
+            padding: 16px 24px 0;
         }
 
         .metric-chip {
@@ -216,11 +213,47 @@
             align-items: center;
             gap: 8px;
             border: 1px solid rgba(255, 255, 255, 0.06);
+            cursor: pointer;
         }
 
         .metric-chip input {
             accent-color: #3b82f6;
         }
+
+        /* SUMMARY */
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            padding: 16px 24px 0;
+        }
+
+        .summary-card {
+            background: #111827;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            padding: 18px;
+        }
+
+        .summary-label {
+            color: #94a3b8;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .summary-value {
+            font-size: 26px;
+            font-weight: 700;
+        }
+
+        .summary-sub {
+            margin-top: 6px;
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        /* CHART */
 
         .chart-wrapper {
             flex: 1;
@@ -243,39 +276,44 @@
         }
 
         .empty-state {
-            height: 100%;
+            position: absolute;
+            inset: 0;
             display: flex;
             align-items: center;
             justify-content: center;
+            text-align: center;
             color: #94a3b8;
-            font-size: 18px;
+            padding: 20px;
         }
 
         .loading {
-            opacity: 0.6;
+            opacity: 0.7;
             pointer-events: none;
         }
 
         ::-webkit-scrollbar {
             width: 8px;
-            height: 8px;
         }
 
         ::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.12);
             border-radius: 999px;
         }
     </style>
 </head>
 
 <body>
+
     <div class="app">
 
         <!-- SIDEBAR -->
         <aside class="sidebar">
 
             <div class="sidebar-header">
-                <div class="logo">Polymarket Trends</div>
+
+                <div class="logo">
+                    Polymarket Trends
+                </div>
 
                 <div class="market-form">
                     <input id="marketUrlInput" type="text" placeholder="Paste Polymarket URL..." />
@@ -284,10 +322,11 @@
                         Add
                     </button>
                 </div>
+
             </div>
 
-            <div id="marketList" class="market-list">
-            </div>
+            <div class="market-list" id="marketList"></div>
+
         </aside>
 
         <!-- MAIN -->
@@ -296,8 +335,13 @@
             <div class="topbar">
 
                 <div class="topbar-left">
-                    <h1 id="selectedTitle">Select a market</h1>
-                    <p id="selectedSlug">No market selected</p>
+                    <h1 id="selectedTitle">
+                        Select a market
+                    </h1>
+
+                    <p id="selectedSlug">
+                        No market selected
+                    </p>
                 </div>
 
                 <div class="controls">
@@ -323,18 +367,25 @@
                     </div>
 
                 </div>
+
             </div>
+
+            <div class="summary-grid" id="summaryGrid"></div>
 
             <div class="metrics" id="metricsContainer"></div>
 
             <div class="chart-wrapper">
+
                 <div class="chart-card">
+
                     <canvas id="analysisChart"></canvas>
 
-                    <div id="emptyState" class="empty-state">
+                    <div class="empty-state" id="emptyState">
                         Select a market from the sidebar
                     </div>
+
                 </div>
+
             </div>
 
         </main>
@@ -342,43 +393,68 @@
     </div>
 
     <script>
+
         const API_BASE = "";
 
         const metricOptions = [
             "Price",
+            "PredictionRate",
             "ProfitRate",
             "WeightedProfitRate",
-            "PredictionRate",
             "TotalProfit"
         ];
 
-        // Different color palette for outcomes
-        const outcomeColors = [
-            "#60a5fa",
-            "#34d399",
-            "#f59e0b",
-            "#f472b6",
-            "#a78bfa",
-            "#f87171",
-            "#22d3ee",
-            "#fb7185"
-        ];
-
-        // Different line styles for metrics
-        const metricStyles = {
-            Price: [],
-            ProfitRate: [6, 4],
-            WeightedProfitRate: [2, 4],
-            PredictionRate: [10, 4],
-            TotalProfit: [1, 3]
+        const outcomeColors = {
+            Yes: "#3b82f6",
+            No: "#ef4444",
+            Maybe: "#10b981"
         };
 
-        // Persist selected metrics
+        const fallbackColors = [
+            "#f59e0b",
+            "#8b5cf6",
+            "#06b6d4",
+            "#ec4899"
+        ];
+
+        const metricStyles = {
+            Price: {
+                borderDash: [],
+                width: 4,
+                opacity: 1
+            },
+
+            PredictionRate: {
+                borderDash: [10, 5],
+                width: 3,
+                opacity: 0.95
+            },
+
+            ProfitRate: {
+                borderDash: [3, 3],
+                width: 2,
+                opacity: 0.9
+            },
+
+            WeightedProfitRate: {
+                borderDash: [15, 5, 3, 5],
+                width: 2,
+                opacity: 0.8
+            },
+
+            TotalProfit: {
+                borderDash: [],
+                width: 3,
+                opacity: 0.75,
+                yAxisID: "profitAxis"
+            }
+        };
+
         let selectedMetricsState = {
             Price: true,
-            ProfitRate: true,
+            PredictionRate: true,
+            ProfitRate: false,
             WeightedProfitRate: false,
-            PredictionRate: false,
             TotalProfit: false
         };
 
@@ -393,24 +469,34 @@
         const daysSelectEl = document.getElementById("daysSelect");
         const outcomeSelectEl = document.getElementById("outcomeSelect");
         const metricsContainerEl = document.getElementById("metricsContainer");
+        const summaryGridEl = document.getElementById("summaryGrid");
         const emptyStateEl = document.getElementById("emptyState");
 
         async function fetchTrackedMarkets() {
+
             try {
+
                 const response = await fetch(`${API_BASE}/tracked`);
+
                 trackedMarkets = await response.json();
 
                 renderMarketList();
+
             } catch (err) {
-                console.error("Failed to fetch tracked markets", err);
+
+                console.error(err);
+
             }
         }
 
         function renderMarketList() {
+
             marketListEl.innerHTML = "";
 
             trackedMarkets.forEach(market => {
+
                 const card = document.createElement("div");
+
                 card.className = "market-card";
 
                 if (
@@ -421,7 +507,7 @@
                 }
 
                 card.innerHTML = `
-        <img src="${market.Image}" alt="" />
+        <img src="${market.Image}" />
 
         <div class="market-info">
           <div class="market-title">
@@ -439,10 +525,12 @@
                 });
 
                 marketListEl.appendChild(card);
+
             });
         }
 
         async function selectMarket(market) {
+
             selectedMarket = market;
 
             renderMarketList();
@@ -454,80 +542,39 @@
         }
 
         async function loadAnalysis() {
+
             if (!selectedMarket) return;
 
             try {
+
                 document.body.classList.add("loading");
 
-                const days = daysSelectEl.value;
-
                 const response = await fetch(
-                    `${API_BASE}/get-market-analysis?marketId=${selectedMarket.MarketId}&days=${days}`
+                    `${API_BASE}/get-market-analysis?marketId=${selectedMarket.MarketId}&days=${daysSelectEl.value}`
                 );
 
-                // Handle 204 No Content
                 if (response.status === 204) {
+
                     analysisData = [];
 
-                    if (chart) {
-                        chart.destroy();
-                        chart = null;
-                    }
-
-                    emptyStateEl.style.display = "flex";
-                    emptyStateEl.innerHTML = `
-        <div style="text-align:center;">
-          <div style="font-size:22px; margin-bottom:10px;">
-            ⏳
-          </div>
-
-          <div style="font-weight:600; margin-bottom:6px;">
-            Loading market analysis
-          </div>
-
-          <div style="font-size:14px; color:#94a3b8;">
-            This market is being processed.<br/>
-            Please come back later.
-          </div>
-        </div>
-      `;
-
-                    metricsContainerEl.innerHTML = "";
-                    outcomeSelectEl.innerHTML = `
-        <option value="all">All</option>
-      `;
+                    showEmptyState(
+                        "⏳",
+                        "Loading market analysis",
+                        "This market is being processed.<br>Please come back later."
+                    );
 
                     return;
                 }
 
                 analysisData = await response.json();
 
-                // Also handle empty arrays
                 if (!analysisData || analysisData.length === 0) {
 
-                    if (chart) {
-                        chart.destroy();
-                        chart = null;
-                    }
-
-                    emptyStateEl.style.display = "flex";
-                    emptyStateEl.innerHTML = `
-        <div style="text-align:center;">
-          <div style="font-size:22px; margin-bottom:10px;">
-            📭
-          </div>
-
-          <div style="font-weight:600; margin-bottom:6px;">
-            No analysis data yet
-          </div>
-
-          <div style="font-size:14px; color:#94a3b8;">
-            Data has not been generated for this market yet.
-          </div>
-        </div>
-      `;
-
-                    metricsContainerEl.innerHTML = "";
+                    showEmptyState(
+                        "📭",
+                        "No analysis data",
+                        "No analysis has been generated yet."
+                    );
 
                     return;
                 }
@@ -535,47 +582,66 @@
                 emptyStateEl.style.display = "none";
 
                 populateOutcomeSelect();
+
                 renderMetricControls();
+
+                renderSummaryCards();
+
                 renderChart();
 
             } catch (err) {
 
-                console.error("Failed to load analysis", err);
+                console.error(err);
 
-                if (chart) {
-                    chart.destroy();
-                    chart = null;
-                }
+                showEmptyState(
+                    "⚠️",
+                    "Failed to load data",
+                    "Please try again later."
+                );
 
-                emptyStateEl.style.display = "flex";
-                emptyStateEl.innerHTML = `
-      <div style="text-align:center;">
-        <div style="font-size:22px; margin-bottom:10px;">
-          ⚠️
+            } finally {
+
+                document.body.classList.remove("loading");
+
+            }
+        }
+
+        function showEmptyState(icon, title, subtitle) {
+
+            if (chart) {
+                chart.destroy();
+                chart = null;
+            }
+
+            metricsContainerEl.innerHTML = "";
+            summaryGridEl.innerHTML = "";
+
+            emptyStateEl.style.display = "flex";
+
+            emptyStateEl.innerHTML = `
+      <div>
+        <div style="font-size:30px;margin-bottom:12px;">
+          ${icon}
         </div>
 
-        <div style="font-weight:600; margin-bottom:6px;">
-          Failed to load analysis
+        <div style="font-size:18px;font-weight:700;margin-bottom:8px;">
+          ${title}
         </div>
 
-        <div style="font-size:14px; color:#94a3b8;">
-          Please try again later.
+        <div style="color:#94a3b8;">
+          ${subtitle}
         </div>
       </div>
     `;
-
-            } finally {
-                document.body.classList.remove("loading");
-            }
         }
+
         function populateOutcomeSelect() {
-            const currentSelection = outcomeSelectEl.value || "all";
+
+            const previous = outcomeSelectEl.value || "all";
 
             outcomeSelectEl.innerHTML = `
       <option value="all">All</option>
     `;
-
-            if (!analysisData.length) return;
 
             const outcomes = new Set();
 
@@ -586,27 +652,30 @@
             });
 
             outcomes.forEach(outcome => {
+
                 const option = document.createElement("option");
 
                 option.value = outcome;
                 option.textContent = outcome;
 
                 outcomeSelectEl.appendChild(option);
+
             });
 
-            // Preserve selected outcome if still available
             if (
                 [...outcomeSelectEl.options]
-                    .some(opt => opt.value === currentSelection)
+                    .some(o => o.value === previous)
             ) {
-                outcomeSelectEl.value = currentSelection;
+                outcomeSelectEl.value = previous;
             }
         }
 
         function renderMetricControls() {
+
             metricsContainerEl.innerHTML = "";
 
             metricOptions.forEach(metric => {
+
                 const chip = document.createElement("label");
 
                 chip.className = "metric-chip";
@@ -624,90 +693,154 @@
                 const checkbox = chip.querySelector("input");
 
                 checkbox.addEventListener("change", () => {
+
                     selectedMetricsState[metric] = checkbox.checked;
+
                     renderChart();
+
                 });
 
                 metricsContainerEl.appendChild(chip);
+
             });
         }
 
         function getSelectedMetrics() {
+
             return Object.entries(selectedMetricsState)
                 .filter(([_, enabled]) => enabled)
                 .map(([metric]) => metric);
         }
 
+        function getOutcomeColor(name, index) {
+
+            if (outcomeColors[name]) {
+                return outcomeColors[name];
+            }
+
+            return fallbackColors[index % fallbackColors.length];
+        }
+
+        function renderSummaryCards() {
+
+            summaryGridEl.innerHTML = "";
+
+            const latest = analysisData[analysisData.length - 1];
+
+            if (!latest) return;
+
+            latest.Outcomes.forEach((outcome, index) => {
+
+                const card = document.createElement("div");
+
+                card.className = "summary-card";
+
+                const color = getOutcomeColor(outcome.Outcome, index);
+
+                card.innerHTML = `
+        <div class="summary-label">
+          ${outcome.Outcome}
+        </div>
+
+        <div
+          class="summary-value"
+          style="color:${color};"
+        >
+          ${(outcome.Price * 100).toFixed(1)}%
+        </div>
+
+        <div class="summary-sub">
+          Prediction ${(outcome.PredictionRate * 100).toFixed(1)}%
+        </div>
+
+        <div class="summary-sub">
+          Profit ${(outcome.ProfitRate * 100).toFixed(2)}%
+        </div>
+      `;
+
+                summaryGridEl.appendChild(card);
+
+            });
+        }
+
         function renderChart() {
+
             if (!analysisData.length) return;
 
             emptyStateEl.style.display = "none";
 
             const selectedMetrics = getSelectedMetrics();
+
             const selectedOutcome = outcomeSelectEl.value;
 
             const datasets = [];
 
-            // Build stable outcome color mapping
             const uniqueOutcomes = [];
 
             analysisData.forEach(entry => {
+
                 entry.Outcomes.forEach(outcome => {
+
                     if (!uniqueOutcomes.includes(outcome.Outcome)) {
                         uniqueOutcomes.push(outcome.Outcome);
                     }
+
                 });
-            });
 
-            const outcomeColorMap = {};
-
-            uniqueOutcomes.forEach((outcome, index) => {
-                outcomeColorMap[outcome] =
-                    outcomeColors[index % outcomeColors.length];
             });
 
             selectedMetrics.forEach(metric => {
 
-                const outcomeGroups = {};
+                const style = metricStyles[metric];
 
-                analysisData.forEach(entry => {
+                uniqueOutcomes.forEach((outcomeName, index) => {
 
-                    entry.Outcomes.forEach(outcome => {
+                    if (
+                        selectedOutcome !== "all" &&
+                        selectedOutcome !== outcomeName
+                    ) {
+                        return;
+                    }
 
-                        if (
-                            selectedOutcome !== "all" &&
-                            outcome.Outcome !== selectedOutcome
-                        ) {
-                            return;
-                        }
+                    const values = [];
 
-                        if (!outcomeGroups[outcome.Outcome]) {
-                            outcomeGroups[outcome.Outcome] = [];
-                        }
+                    analysisData.forEach(entry => {
 
-                        outcomeGroups[outcome.Outcome].push({
+                        const outcome = entry.Outcomes.find(
+                            o => o.Outcome === outcomeName
+                        );
+
+                        if (!outcome) return;
+
+                        values.push({
                             x: entry.LookupTime,
                             y: outcome[metric]
                         });
-                    });
-                });
 
-                Object.entries(outcomeGroups).forEach(([outcomeName, values]) => {
+                    });
 
                     datasets.push({
+
                         label: `${outcomeName} - ${metric}`,
+
                         data: values,
 
-                        // Outcome determines color
-                        borderColor: outcomeColorMap[outcomeName],
-                        backgroundColor: outcomeColorMap[outcomeName],
+                        borderColor: getOutcomeColor(outcomeName, index),
 
-                        // Metric determines dash style
-                        borderDash: metricStyles[metric],
+                        backgroundColor: getOutcomeColor(outcomeName, index),
 
-                        borderWidth: 2.5,
-                        tension: 0.25,
-                        pointRadius: 1.5
+                        borderDash: style.borderDash,
+
+                        borderWidth: style.width,
+
+                        tension: 0.3,
+
+                        pointRadius: 1.5,
+
+                        fill: false,
+
+                        yAxisID: style.yAxisID || "mainAxis"
+
                     });
 
                 });
@@ -723,6 +856,7 @@
                 .getContext("2d");
 
             chart = new Chart(ctx, {
+
                 type: "line",
 
                 data: {
@@ -730,7 +864,9 @@
                 },
 
                 options: {
+
                     responsive: true,
+
                     maintainAspectRatio: false,
 
                     interaction: {
@@ -739,6 +875,7 @@
                     },
 
                     plugins: {
+
                         legend: {
                             labels: {
                                 color: "#e2e8f0"
@@ -753,7 +890,9 @@
                     },
 
                     scales: {
+
                         x: {
+
                             type: "time",
 
                             time: {
@@ -769,13 +908,33 @@
                             }
                         },
 
-                        y: {
+                        mainAxis: {
+
+                            type: "linear",
+
+                            position: "left",
+
                             ticks: {
                                 color: "#94a3b8"
                             },
 
                             grid: {
                                 color: "rgba(255,255,255,0.05)"
+                            }
+                        },
+
+                        profitAxis: {
+
+                            type: "linear",
+
+                            position: "right",
+
+                            ticks: {
+                                color: "#c084fc"
+                            },
+
+                            grid: {
+                                drawOnChartArea: false
                             }
                         }
                     }
@@ -784,12 +943,15 @@
         }
 
         async function addMarket() {
+
             const input = document.getElementById("marketUrlInput");
+
             const url = input.value.trim();
 
             if (!url) return;
 
             try {
+
                 const response = await fetch(
                     `${API_BASE}/tracked?url=${encodeURIComponent(url)}`,
                     {
@@ -798,7 +960,7 @@
                 );
 
                 if (!response.ok) {
-                    throw new Error("Failed to add market");
+                    throw new Error("Failed");
                 }
 
                 input.value = "";
@@ -806,8 +968,11 @@
                 await fetchTrackedMarkets();
 
             } catch (err) {
+
                 console.error(err);
+
                 alert("Failed to add market");
+
             }
         }
 
@@ -817,10 +982,12 @@
 
         document
             .getElementById("marketUrlInput")
-            .addEventListener("keydown", (e) => {
+            .addEventListener("keydown", e => {
+
                 if (e.key === "Enter") {
                     addMarket();
                 }
+
             });
 
         daysSelectEl.addEventListener("change", loadAnalysis);
@@ -828,7 +995,9 @@
         outcomeSelectEl.addEventListener("change", renderChart);
 
         fetchTrackedMarkets();
+
     </script>
+
 </body>
 
 </html>
