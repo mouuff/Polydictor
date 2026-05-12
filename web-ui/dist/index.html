@@ -1,1 +1,682 @@
-Test
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Polymarket Trend Analyzer</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .app {
+      display: flex;
+      height: 100vh;
+    }
+
+    /* SIDEBAR */
+
+    .sidebar {
+      width: 360px;
+      background: #111827;
+      border-right: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-header {
+      padding: 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .logo {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 18px;
+      letter-spacing: -0.5px;
+    }
+
+    .market-form {
+      display: flex;
+      gap: 10px;
+    }
+
+    .market-form input {
+      flex: 1;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: #1f2937;
+      color: white;
+      outline: none;
+      transition: 0.2s;
+    }
+
+    .market-form input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+    }
+
+    .market-form button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 0 18px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: 0.2s;
+    }
+
+    .market-form button:hover {
+      background: #1d4ed8;
+    }
+
+    .market-list {
+      overflow-y: auto;
+      padding: 12px;
+      flex: 1;
+    }
+
+    .market-card {
+      display: flex;
+      gap: 14px;
+      padding: 14px;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: 0.2s;
+      margin-bottom: 10px;
+      border: 1px solid transparent;
+      background: rgba(255,255,255,0.02);
+    }
+
+    .market-card:hover {
+      background: rgba(255,255,255,0.05);
+    }
+
+    .market-card.active {
+      border-color: #3b82f6;
+      background: rgba(59,130,246,0.12);
+    }
+
+    .market-card img {
+      width: 72px;
+      height: 72px;
+      object-fit: cover;
+      border-radius: 12px;
+      flex-shrink: 0;
+    }
+
+    .market-info {
+      min-width: 0;
+    }
+
+    .market-title {
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.35;
+      margin-bottom: 6px;
+    }
+
+    .market-slug {
+      font-size: 12px;
+      color: #94a3b8;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* MAIN */
+
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .topbar {
+      padding: 20px 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15,23,42,0.8);
+      backdrop-filter: blur(8px);
+    }
+
+    .topbar-left h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .topbar-left p {
+      margin: 6px 0 0;
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #1e293b;
+      padding: 10px 14px;
+      border-radius: 12px;
+    }
+
+    .control-group label {
+      font-size: 13px;
+      color: #cbd5e1;
+    }
+
+    .control-group select,
+    .control-group input {
+      background: transparent;
+      border: none;
+      color: white;
+      outline: none;
+      font-size: 14px;
+    }
+
+    .metrics {
+      display: flex;
+      gap: 10px;
+      padding: 16px 24px 0;
+      flex-wrap: wrap;
+    }
+
+    .metric-chip {
+      background: #1e293b;
+      padding: 10px 14px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .metric-chip input {
+      accent-color: #3b82f6;
+    }
+
+    .chart-wrapper {
+      flex: 1;
+      padding: 24px;
+      min-height: 0;
+    }
+
+    .chart-card {
+      height: 100%;
+      background: #111827;
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,0.06);
+      padding: 20px;
+      position: relative;
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    .empty-state {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #94a3b8;
+      font-size: 18px;
+    }
+
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.15);
+      border-radius: 999px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+      <div class="sidebar-header">
+        <div class="logo">Polymarket Trends</div>
+
+        <div class="market-form">
+          <input
+            id="marketUrlInput"
+            type="text"
+            placeholder="Paste Polymarket URL..."
+          />
+
+          <button id="addMarketBtn">
+            Add
+          </button>
+        </div>
+      </div>
+
+      <div id="marketList" class="market-list">
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <div class="topbar">
+
+        <div class="topbar-left">
+          <h1 id="selectedTitle">Select a market</h1>
+          <p id="selectedSlug">No market selected</p>
+        </div>
+
+        <div class="controls">
+
+          <div class="control-group">
+            <label>Lookback</label>
+
+            <select id="daysSelect">
+              <option value="1">1 day</option>
+              <option value="3">3 days</option>
+              <option value="7" selected>7 days</option>
+              <option value="14">14 days</option>
+              <option value="30">30 days</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label>Outcome</label>
+
+            <select id="outcomeSelect">
+              <option value="all">All</option>
+            </select>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="metrics" id="metricsContainer"></div>
+
+      <div class="chart-wrapper">
+        <div class="chart-card">
+          <canvas id="analysisChart"></canvas>
+
+          <div id="emptyState" class="empty-state">
+            Select a market from the sidebar
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <script>
+    const API_BASE = "";
+
+    const metricOptions = [
+      "Price",
+      "ProfitRate",
+      "WeightedProfitRate",
+      "PredictionRate",
+      "TotalProfit"
+    ];
+
+    const metricColors = {
+      Price: "#60a5fa",
+      ProfitRate: "#34d399",
+      WeightedProfitRate: "#f59e0b",
+      PredictionRate: "#f472b6",
+      TotalProfit: "#a78bfa"
+    };
+
+    let trackedMarkets = [];
+    let selectedMarket = null;
+    let chart = null;
+    let analysisData = [];
+
+    const marketListEl = document.getElementById("marketList");
+    const selectedTitleEl = document.getElementById("selectedTitle");
+    const selectedSlugEl = document.getElementById("selectedSlug");
+    const daysSelectEl = document.getElementById("daysSelect");
+    const outcomeSelectEl = document.getElementById("outcomeSelect");
+    const metricsContainerEl = document.getElementById("metricsContainer");
+    const emptyStateEl = document.getElementById("emptyState");
+
+    async function fetchTrackedMarkets() {
+      try {
+        const response = await fetch(`${API_BASE}/tracked`);
+        trackedMarkets = await response.json();
+
+        renderMarketList();
+      } catch (err) {
+        console.error("Failed to fetch tracked markets", err);
+      }
+    }
+
+    function renderMarketList() {
+      marketListEl.innerHTML = "";
+
+      trackedMarkets.forEach(market => {
+        const card = document.createElement("div");
+        card.className = "market-card";
+
+        if (
+          selectedMarket &&
+          selectedMarket.MarketId === market.MarketId
+        ) {
+          card.classList.add("active");
+        }
+
+        card.innerHTML = `
+          <img src="${market.Image}" alt="" />
+
+          <div class="market-info">
+            <div class="market-title">
+              ${market.Question}
+            </div>
+
+            <div class="market-slug">
+              ${market.Slug}
+            </div>
+          </div>
+        `;
+
+        card.addEventListener("click", () => {
+          selectMarket(market);
+        });
+
+        marketListEl.appendChild(card);
+      });
+    }
+
+    async function selectMarket(market) {
+      selectedMarket = market;
+
+      renderMarketList();
+
+      selectedTitleEl.textContent = market.Question;
+      selectedSlugEl.textContent = market.Slug;
+
+      await loadAnalysis();
+    }
+
+    async function loadAnalysis() {
+      if (!selectedMarket) return;
+
+      try {
+        document.body.classList.add("loading");
+
+        const days = daysSelectEl.value;
+
+        const response = await fetch(
+          `${API_BASE}/get-market-analysis?marketId=${selectedMarket.MarketId}&days=${days}`
+        );
+
+        analysisData = await response.json();
+
+        populateOutcomeSelect();
+        renderMetricControls();
+        renderChart();
+
+      } catch (err) {
+        console.error("Failed to load analysis", err);
+      } finally {
+        document.body.classList.remove("loading");
+      }
+    }
+
+    function populateOutcomeSelect() {
+      outcomeSelectEl.innerHTML = `
+        <option value="all">All</option>
+      `;
+
+      if (!analysisData.length) return;
+
+      const outcomes = new Set();
+
+      analysisData.forEach(entry => {
+        entry.Outcomes.forEach(outcome => {
+          outcomes.add(outcome.Outcome);
+        });
+      });
+
+      outcomes.forEach(outcome => {
+        const option = document.createElement("option");
+        option.value = outcome;
+        option.textContent = outcome;
+
+        outcomeSelectEl.appendChild(option);
+      });
+    }
+
+    function renderMetricControls() {
+      metricsContainerEl.innerHTML = "";
+
+      metricOptions.forEach((metric, index) => {
+        const chip = document.createElement("label");
+
+        chip.className = "metric-chip";
+
+        chip.innerHTML = `
+          <input
+            type="checkbox"
+            value="${metric}"
+            ${index < 2 ? "checked" : ""}
+          />
+
+          <span>${metric}</span>
+        `;
+
+        chip.querySelector("input")
+          .addEventListener("change", renderChart);
+
+        metricsContainerEl.appendChild(chip);
+      });
+    }
+
+    function getSelectedMetrics() {
+      return [
+        ...document.querySelectorAll(".metric-chip input:checked")
+      ].map(input => input.value);
+    }
+
+    function renderChart() {
+      if (!analysisData.length) return;
+
+      emptyStateEl.style.display = "none";
+
+      const selectedMetrics = getSelectedMetrics();
+      const selectedOutcome = outcomeSelectEl.value;
+
+      const datasets = [];
+
+      selectedMetrics.forEach(metric => {
+
+        const outcomeGroups = {};
+
+        analysisData.forEach(entry => {
+          entry.Outcomes.forEach(outcome => {
+
+            if (
+              selectedOutcome !== "all" &&
+              outcome.Outcome !== selectedOutcome
+            ) {
+              return;
+            }
+
+            if (!outcomeGroups[outcome.Outcome]) {
+              outcomeGroups[outcome.Outcome] = [];
+            }
+
+            outcomeGroups[outcome.Outcome].push({
+              x: entry.LookupTime,
+              y: outcome[metric]
+            });
+          });
+        });
+
+        Object.entries(outcomeGroups).forEach(([outcomeName, values]) => {
+          datasets.push({
+            label: `${outcomeName} - ${metric}`,
+            data: values,
+            borderColor: metricColors[metric],
+            backgroundColor: metricColors[metric],
+            borderWidth: 2,
+            tension: 0.25,
+            pointRadius: 1.5
+          });
+        });
+
+      });
+
+      if (chart) {
+        chart.destroy();
+      }
+
+      const ctx = document
+        .getElementById("analysisChart")
+        .getContext("2d");
+
+      chart = new Chart(ctx, {
+        type: "line",
+
+        data: {
+          datasets
+        },
+
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+
+          interaction: {
+            mode: "nearest",
+            intersect: false
+          },
+
+          plugins: {
+            legend: {
+              labels: {
+                color: "#e2e8f0"
+              }
+            },
+
+            tooltip: {
+              backgroundColor: "#111827",
+              borderColor: "rgba(255,255,255,0.1)",
+              borderWidth: 1
+            }
+          },
+
+          scales: {
+            x: {
+              type: "time",
+
+              time: {
+                tooltipFormat: "DDD T"
+              },
+
+              ticks: {
+                color: "#94a3b8"
+              },
+
+              grid: {
+                color: "rgba(255,255,255,0.05)"
+              }
+            },
+
+            y: {
+              ticks: {
+                color: "#94a3b8"
+              },
+
+              grid: {
+                color: "rgba(255,255,255,0.05)"
+              }
+            }
+          }
+        }
+      });
+    }
+
+    async function addMarket() {
+      const input = document.getElementById("marketUrlInput");
+      const url = input.value.trim();
+
+      if (!url) return;
+
+      try {
+        const response = await fetch(
+          `${API_BASE}/tracked?url=${encodeURIComponent(url)}`,
+          {
+            method: "POST"
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to add market");
+        }
+
+        input.value = "";
+
+        await fetchTrackedMarkets();
+
+      } catch (err) {
+        console.error(err);
+        alert("Failed to add market");
+      }
+    }
+
+    document
+      .getElementById("addMarketBtn")
+      .addEventListener("click", addMarket);
+
+    document
+      .getElementById("marketUrlInput")
+      .addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          addMarket();
+        }
+      });
+
+    daysSelectEl.addEventListener("change", loadAnalysis);
+
+    outcomeSelectEl.addEventListener("change", renderChart);
+
+    fetchTrackedMarkets();
+  </script>
+</body>
+</html>
