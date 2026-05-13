@@ -30,10 +30,14 @@ func NewAnalyzer(db Store) *Analyzer {
 	}
 }
 
-func (o *Analyzer) AnalyzeMarket(slug string) (*MarketAnalysis, error) {
+func (o *Analyzer) AnalyzeMarket(slug string, skipClosedMarket bool) (*MarketAnalysis, error) {
 	market, err := o.api.GetMarketBySlug(o.ctx, slug)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get market info for slug %s: %w", slug, err)
+	}
+
+	if skipClosedMarket && market.Active == false {
+		return nil, fmt.Errorf("market %s is not active", market.Slug)
 	}
 
 	tokenHolders, err := o.api.GetTopHolders(o.ctx, market.ConditionId)

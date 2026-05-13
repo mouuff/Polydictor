@@ -49,7 +49,7 @@ func (cmd *AnalyzeCmd) Run() error {
 	defer db.Close()
 
 	orchestrator := polyflow.NewAnalyzer(db)
-	analysis, err := orchestrator.AnalyzeMarket(cmd.marketId)
+	analysis, err := orchestrator.AnalyzeMarket(cmd.marketId, false)
 	if err != nil {
 		return err
 	}

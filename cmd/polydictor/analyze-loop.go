@@ -67,7 +67,7 @@ func (cmd *AnalyzeLoopCmd) Run() error {
 
 			log.Printf("Analyzing %s", market.Slug)
 
-			_, err := orchestrator.AnalyzeMarket(market.Slug)
+			_, err := orchestrator.AnalyzeMarket(market.Slug, true)
 			if err != nil {
 				log.Printf(
 					"Failed to analyze market %s: %v",
