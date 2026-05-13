@@ -23,7 +23,7 @@ func NewAnalyzer(db Store) *Analyzer {
 		ctx:           context.Background(),
 		api:           polyapi.NewPolyapi(),
 		db:            db,
-		CacheDuration: 12 * time.Hour,
+		CacheDuration: 6 * time.Hour,
 		Debug:         true,
 	}
 }
