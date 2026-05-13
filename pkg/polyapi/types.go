@@ -32,6 +32,7 @@ type Market struct {
 	Description   string   `json:"description"`
 	Question      string   `json:"question"`
 	Image         string   `json:"image"`
+	Active        bool     `json:"active"`
 	OutcomePrices []string `json:"-"`
 	Outcomes      []string `json:"-"`
 	ClobTokenIds  []string `json:"-"`

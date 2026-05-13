@@ -61,6 +61,9 @@ func TestGetMarketBySlug_Success(t *testing.T) {
 	if market.ClobTokenIds[1] != "67289423425612777318091296514180935026483263988884208932357196525302151688551" {
 		t.Fatalf("unexpected market clob token id: got=%s expected=%s", market.ClobTokenIds[1], "67289423425612777318091296514180935026483263988884208932357196525302151688551")
 	}
+	if market.Active == false {
+		t.Fatalf("unexpected market active status: got=%t expected=%t", market.Active, true)
+	}
 }
 
 func TestGetUser_Success(t *testing.T) {
