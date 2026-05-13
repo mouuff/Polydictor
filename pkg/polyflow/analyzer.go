@@ -11,20 +11,22 @@ import (
 )
 
 type Analyzer struct {
-	ctx           context.Context
-	api           *polyapi.Polyapi
-	db            Store
-	CacheDuration time.Duration
-	Debug         bool
+	ctx               context.Context
+	api               *polyapi.Polyapi
+	db                Store
+	UserCacheDuration time.Duration
+	UserMinimumBets   int
+	Debug             bool
 }
 
 func NewAnalyzer(db Store) *Analyzer {
 	return &Analyzer{
-		ctx:           context.Background(),
-		api:           polyapi.NewPolyapi(),
-		db:            db,
-		CacheDuration: 6 * time.Hour,
-		Debug:         true,
+		ctx:               context.Background(),
+		api:               polyapi.NewPolyapi(),
+		db:                db,
+		UserCacheDuration: 6 * time.Hour,
+		UserMinimumBets:   10,
+		Debug:             true,
 	}
 }
 
@@ -89,6 +91,10 @@ func (o *Analyzer) analyzeMarketOutcome(market *polyapi.Market, tokenHolders *[]
 	}
 
 	for _, scoredUser := range scoredUsers {
+		if scoredUser.TotalBets < o.UserMinimumBets {
+			continue
+		}
+
 		userPredictionRate := scoredUser.PredictionRate
 		userProfitRate := scoredUser.ProfitRate
 		userProfit := scoredUser.Profit
@@ -156,7 +162,7 @@ func (o *Analyzer) GetScoredUsers(holders []polyapi.Holder) ([]*ScoredUser, erro
 }
 
 func (o *Analyzer) GetScoredUser(proxyWallet, name string) (*ScoredUser, error) {
-	u, err := o.db.GetFreshScoredUser(proxyWallet, o.CacheDuration)
+	u, err := o.db.GetFreshScoredUser(proxyWallet, o.UserCacheDuration)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user from database: %w", err)
 	}
