@@ -27,20 +27,14 @@ Polydictor analyzes [Polymarket](https://polymarket.com) betting markets by eval
 
 - **[Go 1.25+](https://go.dev/dl/)**
 
-### Build
-
-```bash
-go build -o polydictor ./cmd/polydictor
-```
-
 ### Run the Web UI
 
 ```bash
 # 1. Start the analysis loop (runs in background, analyzes tracked markets every 15 min)
-./polydictor analyze-loop -db store.db
+go run .\cmd\polydictor analyze-loop -db store.db
 
 # 2. In another terminal, start the web server (serving the API and web UI)
-./polydictor serve -db store.db
+go run .\cmd\polydictor serve -db store.db
 ```
 
 Open [http://localhost:8081](http://localhost:8081) in your browser. Paste a Polymarket URL to start tracking.
@@ -52,7 +46,7 @@ Open [http://localhost:8081](http://localhost:8081) in your browser. Paste a Pol
 Starts the HTTP server and web UI on port **8081**.
 
 ```bash
-./polydictor serve [-db store.db]
+go run .\cmd\polydictor serve [-db store.db]
 ```
 
 | Flag | Default | Description |
@@ -72,7 +66,7 @@ Starts the HTTP server and web UI on port **8081**.
 Continuously analyzes all tracked markets at a regular interval.
 
 ```bash
-./polydictor analyze-loop [-db store.db] [-frequency 15]
+go run .\cmd\polydictor analyze-loop [-db store.db] [-frequency 15]
 ```
 
 | Flag | Default | Description |
@@ -85,7 +79,7 @@ Continuously analyzes all tracked markets at a regular interval.
 Run a one-off analysis for a single market.
 
 ```bash
-./polydictor analyze -slug <market-slug> [-db store.db]
+go run .\cmd\polydictor analyze -slug <market-slug> [-db store.db]
 ```
 
 ### `user`
@@ -93,7 +87,7 @@ Run a one-off analysis for a single market.
 Display trading performance stats for a specific user/wallet.
 
 ```bash
-./polydictor user -id <wallet-address> [-db store.db]
+go run .\cmd\polydictor user -id <wallet-address> [-db store.db]
 ```
 
 ## Architecture
