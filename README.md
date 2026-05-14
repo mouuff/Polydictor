@@ -18,7 +18,6 @@ Polydictor analyzes [Polymarket](https://polymarket.com) betting markets by eval
 ## Demo
 ![Web UI demo](./docs/demo-1.png)
 
-Explanation:
 - The `prediction rate` for a market outcome represents the average percentage of profitable trades among the top traders for that outcome.
 - The spread is the difference between the `prediction rate` of two outcomes. A large spread often indicates that one outcome is more likely to win than the other.
 
