@@ -1,1003 +1,1310 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Polymarket Trend Analyzer</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Polydictor — Prediction Market Analytics</title>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon"></script>
+<!-- Chart.js + Luxon time adapter + Zoom plugin -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/luxon@3.5.0/build/global/luxon.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1/dist/chartjs-adapter-luxon.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+<!-- Inter + JetBrains Mono -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 
-        body {
-            margin: 0;
-            font-family: Inter, system-ui, sans-serif;
-            background: #0f172a;
-            color: #e2e8f0;
-            height: 100vh;
-            overflow: hidden;
-        }
+<style>
+/* ================================================================
+   THEME — CSS custom properties
+   ================================================================ */
+:root {
+  --bg-0: #06090f;
+  --bg-1: #0c1120;
+  --bg-2: #111827;
+  --bg-3: #1a2332;
+  --bg-4: #1e293b;
+  --bg-glass: rgba(12, 17, 32, 0.7);
+  --bg-hover: rgba(255,255,255,0.03);
+  --bg-active: rgba(99,179,237,0.08);
 
-        .app {
-            display: flex;
-            height: 100vh;
-        }
+  --border-0: rgba(255,255,255,0.04);
+  --border-1: rgba(255,255,255,0.07);
+  --border-2: rgba(255,255,255,0.12);
+  --border-accent: rgba(99,179,237,0.3);
 
-        /* SIDEBAR */
+  --text-0: #f1f5f9;
+  --text-1: #cbd5e1;
+  --text-2: #94a3b8;
+  --text-3: #64748b;
+  --text-4: #475569;
 
-        .sidebar {
-            width: 360px;
-            background: #111827;
-            border-right: 1px solid rgba(255, 255, 255, 0.08);
-            display: flex;
-            flex-direction: column;
-        }
+  /* Primary: PredictionRate accent — bright, noticeable */
+  --prediction: #38bdf8;
+  --prediction-dim: rgba(56,189,248,0.12);
+  --prediction-glow: rgba(56,189,248,0.2);
 
-        .sidebar-header {
-            padding: 24px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        }
+  /* Price: muted, softer */
+  --price: #94a3b8;
+  --price-dim: rgba(148,163,184,0.1);
 
-        .logo {
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 18px;
-        }
+  /* Outcome palette */
+  --outcome-yes: #38bdf8;
+  --outcome-no: #f87171;
+  --outcome-alt0: #a78bfa;
+  --outcome-alt1: #34d399;
+  --outcome-alt2: #fbbf24;
+  --outcome-alt3: #fb923c;
 
-        .market-form {
-            display: flex;
-            gap: 10px;
-        }
+  /* Semantic */
+  --green: #34d399;
+  --green-dim: rgba(52,211,153,0.12);
+  --red: #f87171;
+  --red-dim: rgba(248,113,113,0.12);
 
-        .market-form input {
-            flex: 1;
-            padding: 12px 14px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: #1f2937;
-            color: white;
-            outline: none;
-        }
+  /* Metrics */
+  --color-PredictionRate: #38bdf8;
+  --color-Price: #94a3b8;
+  --color-ProfitRate: #fbbf24;
+  --color-WeightedProfitRate: #a78bfa;
+  --color-TotalProfit: #f472b6;
 
-        .market-form input:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-        }
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
 
-        .market-form button {
-            border: none;
-            background: #2563eb;
-            color: white;
-            border-radius: 12px;
-            padding: 0 18px;
-            cursor: pointer;
-            font-weight: 600;
-        }
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.35);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
 
-        .market-form button:hover {
-            background: #1d4ed8;
-        }
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
 
-        .market-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 12px;
-        }
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+  --transition-slow: 0.4s cubic-bezier(0.4,0,0.2,1);
 
-        .market-card {
-            display: flex;
-            gap: 14px;
-            padding: 14px;
-            border-radius: 16px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            transition: 0.2s;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid transparent;
-        }
+  --sidebar-w: 370px;
+}
 
-        .market-card:hover {
-            background: rgba(255, 255, 255, 0.05);
-        }
+/* ================================================================
+   RESET
+   ================================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .market-card.active {
-            border-color: #3b82f6;
-            background: rgba(59, 130, 246, 0.12);
-        }
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-0);
+  color: var(--text-0);
+  height: 100vh;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
 
-        .market-card img {
-            width: 72px;
-            height: 72px;
-            object-fit: cover;
-            border-radius: 12px;
-            flex-shrink: 0;
-        }
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: var(--radius-pill); }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
 
-        .market-info {
-            min-width: 0;
-        }
+/* ================================================================
+   LAYOUT
+   ================================================================ */
+.app { display: flex; height: 100vh; }
 
-        .market-title {
-            font-size: 14px;
-            font-weight: 600;
-            line-height: 1.35;
-            margin-bottom: 6px;
-        }
+/* ================================================================
+   TOASTS
+   ================================================================ */
+.toast-rack {
+  position: fixed; top: 16px; right: 16px; z-index: 9999;
+  display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  background: var(--bg-2);
+  border: 1px solid var(--border-1);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow-lg);
+  font-size: 13px; font-weight: 500; color: var(--text-0);
+  display: flex; align-items: center; gap: 8px;
+  animation: toastIn .3s cubic-bezier(.21,1.02,.73,1) forwards;
+  max-width: 380px;
+}
+.toast.out { animation: toastOut .25s ease forwards; }
+.toast-ok { border-left: 3px solid var(--green); }
+.toast-err { border-left: 3px solid var(--red); }
+@keyframes toastIn { from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)} }
+@keyframes toastOut { to{opacity:0;transform:translateX(30px)} }
 
-        .market-slug {
-            font-size: 12px;
-            color: #94a3b8;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
+/* ================================================================
+   SIDEBAR
+   ================================================================ */
+.sidebar {
+  width: var(--sidebar-w); min-width: var(--sidebar-w);
+  background: var(--bg-1);
+  border-right: 1px solid var(--border-0);
+  display: flex; flex-direction: column;
+  transition: width var(--transition-slow), min-width var(--transition-slow);
+  z-index: 100;
+}
+.sidebar.collapsed { width: 0; min-width: 0; overflow: hidden; border-right: none; }
 
-        /* MAIN */
+.sidebar-toggle {
+  position: absolute; top: 16px; left: calc(var(--sidebar-w) - 1px);
+  transform: translateX(-50%); z-index: 200;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--bg-3); border: 1px solid var(--border-1);
+  color: var(--text-3); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; transition: var(--transition-normal);
+}
+.sidebar-toggle:hover { background: var(--prediction); color: var(--bg-0); border-color: var(--prediction); }
+.sidebar.collapsed ~ .sidebar-toggle { left: 8px; transform: translateX(0); }
 
-        .main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
+/* Brand */
+.sidebar-brand {
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border-0);
+  flex-shrink: 0;
+}
+.brand-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.brand-mark {
+  width: 30px; height: 30px; border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--prediction), #818cf8);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 15px; color: white;
+}
+.brand-name { font-size: 16px; font-weight: 700; letter-spacing: -.3px; }
+.brand-tag {
+  margin-left: auto; font-size: 9px; font-weight: 600;
+  padding: 2px 6px; border-radius: var(--radius-pill);
+  background: var(--prediction-dim); color: var(--prediction);
+  text-transform: uppercase; letter-spacing: .5px;
+}
 
-        .topbar {
-            padding: 20px 24px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(8px);
-        }
+/* Add market form */
+.add-form { display: flex; gap: 6px; }
+.add-input {
+  flex: 1; padding: 9px 12px; border-radius: var(--radius-md);
+  border: 1px solid var(--border-0); background: var(--bg-0);
+  color: var(--text-0); font-size: 12px; font-family: var(--font-sans);
+  outline: none; transition: var(--transition-fast);
+}
+.add-input::placeholder { color: var(--text-4); }
+.add-input:focus { border-color: var(--prediction); box-shadow: 0 0 0 2px var(--prediction-glow); }
+.add-btn {
+  padding: 0 14px; border-radius: var(--radius-md); border: none;
+  background: var(--prediction); color: var(--bg-0);
+  font-weight: 600; font-size: 12px; font-family: var(--font-sans);
+  cursor: pointer; transition: var(--transition-fast);
+  display: flex; align-items: center; gap: 5px; white-space: nowrap;
+}
+.add-btn:hover { filter: brightness(1.1); }
+.add-btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-spinner {
+  width: 12px; height: 12px; border: 2px solid rgba(0,0,0,.2);
+  border-top-color: var(--bg-0); border-radius: 50%;
+  animation: spin .5s linear infinite;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
 
-        .topbar-left h1 {
-            margin: 0;
-            font-size: 24px;
-        }
+/* Search */
+.sidebar-search {
+  padding: 10px 20px; border-bottom: 1px solid var(--border-0); flex-shrink: 0;
+}
+.search-box {
+  width: 100%; padding: 8px 12px; border-radius: var(--radius-md);
+  border: 1px solid var(--border-0); background: var(--bg-0);
+  color: var(--text-0); font-size: 12px; font-family: var(--font-sans);
+  outline: none; transition: var(--transition-fast);
+}
+.search-box:focus { border-color: var(--prediction); box-shadow: 0 0 0 2px var(--prediction-glow); }
 
-        .topbar-left p {
-            margin-top: 6px;
-            color: #94a3b8;
-            font-size: 14px;
-        }
+/* Market list */
+.market-list { flex: 1; overflow-y: auto; padding: 8px 10px; }
 
-        .controls {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            flex-wrap: wrap;
-        }
+.mkt-card {
+  display: flex; gap: 11px; padding: 11px; border-radius: var(--radius-lg);
+  margin-bottom: 4px; cursor: pointer; transition: all var(--transition-normal);
+  border: 1px solid transparent;
+}
+.mkt-card:hover { background: var(--bg-hover); }
+.mkt-card.active {
+  border-color: var(--border-accent); background: var(--bg-active);
+}
+.mkt-img {
+  width: 48px; height: 48px; border-radius: var(--radius-sm);
+  object-fit: cover; flex-shrink: 0;
+}
+.mkt-body { min-width: 0; flex: 1; }
+.mkt-q {
+  font-size: 12.5px; font-weight: 600; line-height: 1.35; margin-bottom: 3px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.mkt-id { font-size: 10.5px; color: var(--text-4); font-family: var(--font-mono); }
+.mkt-spark { width: 50px; height: 24px; flex-shrink: 0; align-self: center; }
 
-        .control-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: #1e293b;
-            padding: 10px 14px;
-            border-radius: 12px;
-        }
+/* Skeleton */
+.skel { border-radius: var(--radius-sm); background: linear-gradient(90deg, var(--bg-3) 25%, rgba(255,255,255,.03) 50%, var(--bg-3) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 
-        .control-group label {
-            font-size: 13px;
-            color: #cbd5e1;
-        }
+/* ================================================================
+   MAIN AREA
+   ================================================================ */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
 
-        .control-group select {
-            background: transparent;
-            border: none;
-            color: white;
-            outline: none;
-        }
+/* Topbar */
+.topbar {
+  padding: 14px 24px; border-bottom: 1px solid var(--border-0);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 14px; flex-wrap: wrap; flex-shrink: 0;
+  background: var(--bg-glass); backdrop-filter: blur(10px);
+}
+.topbar-left { display: flex; gap: 12px; align-items: flex-start; min-width: 0; flex: 1; }
+.topbar-img {
+  width: 40px; height: 40px; border-radius: var(--radius-sm);
+  object-fit: cover; flex-shrink: 0; display: none;
+}
+.topbar-title {
+  font-size: 17px; font-weight: 700; letter-spacing: -.2px; line-height: 1.3;
+}
+.topbar-title a { color: var(--text-0); text-decoration: none; transition: color var(--transition-fast); }
+.topbar-title a:hover { color: var(--prediction); }
+.topbar-slug {
+  margin-top: 2px; font-size: 11.5px; color: var(--text-4); font-family: var(--font-mono);
+}
 
-        /* METRICS */
+.controls-row {
+  display: none; align-items: center; gap: 8px; flex-wrap: wrap; flex-shrink: 0;
+}
+/* Lookback pills */
+.pill-group {
+  display: flex; background: var(--bg-3); border-radius: var(--radius-md);
+  border: 1px solid var(--border-0); overflow: hidden;
+}
+.pill {
+  padding: 7px 13px; border: none; background: transparent;
+  color: var(--text-3); font-size: 11.5px; font-weight: 600;
+  font-family: var(--font-sans); cursor: pointer; transition: var(--transition-fast);
+}
+.pill:hover { color: var(--text-1); background: var(--bg-hover); }
+.pill.on { background: var(--prediction); color: var(--bg-0); }
 
-        .metrics {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            padding: 16px 24px 0;
-        }
+.refresh-btn {
+  padding: 7px 12px; border-radius: var(--radius-md);
+  border: 1px solid var(--border-0); background: var(--bg-3);
+  color: var(--text-2); font-size: 11.5px; font-weight: 500;
+  font-family: var(--font-sans); cursor: pointer; transition: var(--transition-fast);
+  display: flex; align-items: center; gap: 5px;
+}
+.refresh-btn:hover { border-color: var(--prediction); color: var(--prediction); }
 
-        .metric-chip {
-            background: #1e293b;
-            padding: 10px 14px;
-            border-radius: 999px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            cursor: pointer;
-        }
+.countdown {
+  font-size: 11px; font-family: var(--font-mono); color: var(--text-4);
+  padding: 6px 9px; border-radius: var(--radius-md);
+  background: var(--bg-3); border: 1px solid var(--border-0);
+  min-width: 56px; text-align: center;
+}
 
-        .metric-chip input {
-            accent-color: #3b82f6;
-        }
+/* ================================================================
+   DASHBOARD SCROLL
+   ================================================================ */
+.dash-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; }
 
-        /* SUMMARY */
+/* ================================================================
+   OUTCOME CARDS
+   ================================================================ */
+.outcome-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px; padding: 18px 24px 0;
+}
 
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 16px;
-            padding: 16px 24px 0;
-        }
+.o-card {
+  background: var(--bg-2); border: 1px solid var(--border-0);
+  border-radius: var(--radius-xl); padding: 18px 20px;
+  position: relative; overflow: hidden;
+  transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
+}
+.o-card:hover { border-color: var(--border-1); }
 
-        .summary-card {
-            background: #111827;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 20px;
-            padding: 18px;
-        }
+/* Thin accent bar at top */
+.o-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--card-color, var(--text-4));
+}
 
-        .summary-label {
-            color: #94a3b8;
-            font-size: 13px;
-            margin-bottom: 8px;
-        }
+.o-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.o-name { font-size: 14px; font-weight: 700; }
 
-        .summary-value {
-            font-size: 26px;
-            font-weight: 700;
-        }
+/* Delta pill */
+.o-delta {
+  font-size: 11px; font-weight: 600; padding: 3px 8px;
+  border-radius: var(--radius-pill); font-family: var(--font-mono);
+}
+.o-delta.pos { background: var(--green-dim); color: var(--green); }
+.o-delta.neg { background: var(--red-dim); color: var(--red); }
+.o-delta.zero { background: rgba(148,163,184,.1); color: var(--text-3); }
 
-        .summary-sub {
-            margin-top: 6px;
-            color: #94a3b8;
-            font-size: 13px;
-        }
+/* Hero metric: PredictionRate */
+.o-prediction-label {
+  font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px;
+  color: var(--prediction); margin-bottom: 4px;
+}
+.o-prediction-value {
+  font-size: 34px; font-weight: 800; letter-spacing: -1px; line-height: 1;
+  color: var(--text-0); margin-bottom: 2px;
+}
 
-        /* CHART */
+/* Sub row: Price + delta from prediction */
+.o-price-row {
+  display: flex; align-items: baseline; gap: 10px; margin-bottom: 16px;
+}
+.o-price-label { font-size: 10.5px; color: var(--text-4); }
+.o-price-value { font-size: 16px; font-weight: 600; color: var(--text-2); font-family: var(--font-mono); }
+.o-divergence {
+  font-size: 11px; font-weight: 600; font-family: var(--font-mono);
+}
+.o-divergence.up { color: var(--green); }
+.o-divergence.down { color: var(--red); }
+.o-divergence.flat { color: var(--text-4); }
 
-        .chart-wrapper {
-            flex: 1;
-            padding: 24px;
-            min-height: 0;
-        }
+/* Secondary metrics grid */
+.o-metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.o-m {
+  padding: 8px 10px; background: var(--bg-0); border-radius: var(--radius-sm);
+  border: 1px solid var(--border-0);
+}
+.o-m-label { font-size: 9.5px; color: var(--text-4); text-transform: uppercase; letter-spacing: .3px; margin-bottom: 3px; }
+.o-m-val { font-size: 13px; font-weight: 600; font-family: var(--font-mono); }
 
-        .chart-card {
-            height: 100%;
-            background: #111827;
-            border-radius: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            padding: 20px;
-            position: relative;
-        }
+/* Sparkline in card */
+.o-spark { width: 100%; height: 32px; }
 
-        canvas {
-            width: 100% !important;
-            height: 100% !important;
-        }
+/* ================================================================
+   CHART SECTION
+   ================================================================ */
+.chart-section { padding: 18px 24px 24px; }
 
-        .empty-state {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            color: #94a3b8;
-            padding: 20px;
-        }
+.chart-toolbar {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 10px; gap: 10px; flex-wrap: wrap;
+}
+.chart-toolbar-left { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.chart-toolbar-right { display: flex; align-items: center; gap: 6px; }
 
-        .loading {
-            opacity: 0.7;
-            pointer-events: none;
-        }
+/* Metric toggle chips */
+.m-toggle {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 11px; border-radius: var(--radius-pill);
+  border: 1px solid var(--border-0); background: transparent;
+  color: var(--text-3); font-size: 11.5px; font-weight: 500;
+  font-family: var(--font-sans); cursor: pointer; transition: var(--transition-fast);
+  user-select: none;
+}
+.m-toggle:hover { background: var(--bg-hover); color: var(--text-2); }
+.m-toggle.on { border-color: var(--toggle-color, var(--border-accent)); background: rgba(255,255,255,.03); color: var(--text-0); }
+.m-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
+/* Outcome filter row */
+.o-filters { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+.o-filter-pill {
+  padding: 4px 10px; border-radius: var(--radius-pill);
+  border: 1px solid var(--border-0); background: transparent;
+  color: var(--text-3); font-size: 11px; font-weight: 500;
+  font-family: var(--font-sans); cursor: pointer; transition: var(--transition-fast);
+}
+.o-filter-pill:hover { background: var(--bg-hover); }
+.o-filter-pill.on { border-color: var(--pill-color, var(--border-accent)); color: var(--text-0); font-weight: 600; }
 
-        ::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.12);
-            border-radius: 999px;
-        }
-    </style>
+/* Chart action buttons */
+.c-btn {
+  width: 30px; height: 30px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border-0); background: transparent;
+  color: var(--text-3); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; transition: var(--transition-fast);
+}
+.c-btn:hover { background: var(--bg-hover); color: var(--text-1); border-color: var(--border-1); }
+
+/* Chart container */
+.chart-box {
+  background: var(--bg-2); border: 1px solid var(--border-0);
+  border-radius: var(--radius-xl); padding: 16px 18px;
+  position: relative; height: 400px;
+  transition: height var(--transition-slow);
+}
+.chart-box.fullscreen {
+  position: fixed; inset: 0; z-index: 9998;
+  border-radius: 0; height: 100vh !important; padding: 20px;
+}
+.chart-box canvas { width: 100% !important; height: 100% !important; }
+
+/* ================================================================
+   STATES — welcome / loading / nodata / error
+   ================================================================ */
+.state-view {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 60px 24px; min-height: 320px;
+}
+.state-icon {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--bg-3); display: flex; align-items: center; justify-content: center;
+  font-size: 24px; margin-bottom: 18px;
+}
+.state-h { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.state-p { font-size: 13px; color: var(--text-2); max-width: 380px; line-height: 1.5; }
+
+/* Placeholder chart SVG */
+.ph-chart { width: 240px; height: 60px; margin-top: 20px; }
+.ph-line {
+  stroke: var(--prediction); stroke-width: 1.5; fill: none; opacity: .25;
+  stroke-dasharray: 300; stroke-dashoffset: 300;
+  animation: drawPh 3s ease-in-out infinite;
+}
+.ph-area { fill: var(--prediction); opacity: .04; }
+@keyframes drawPh {
+  0%{stroke-dashoffset:300;opacity:.1} 50%{stroke-dashoffset:0;opacity:.25} 100%{stroke-dashoffset:-300;opacity:.1}
+}
+
+/* Loading dots */
+.ld-dots { display: flex; gap: 5px; margin-top: 14px; }
+.ld-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--prediction);
+  animation: ldp 1.2s ease-in-out infinite;
+}
+.ld-dot:nth-child(2){animation-delay:.15s}
+.ld-dot:nth-child(3){animation-delay:.3s}
+@keyframes ldp { 0%,80%,100%{opacity:.25;transform:scale(.8)} 40%{opacity:1;transform:scale(1)} }
+
+/* ================================================================
+   RESPONSIVE
+   ================================================================ */
+@media(max-width:1000px) {
+  .sidebar { width: 300px; min-width: 300px; }
+  .sidebar-toggle { left: 299px; }
+  .outcome-row { grid-template-columns: 1fr; }
+}
+@media(max-width:700px) {
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0;
+    width: 310px; min-width: 310px; z-index: 1000;
+    box-shadow: var(--shadow-lg);
+  }
+  .sidebar.collapsed { width: 0; min-width: 0; }
+  .sidebar-toggle { left: 6px; z-index: 1001; }
+  .sidebar:not(.collapsed) ~ .sidebar-toggle { left: 309px; }
+}
+</style>
 </head>
 
 <body>
+<!-- Toasts -->
+<div class="toast-rack" id="toasts"></div>
 
-    <div class="app">
-
-        <!-- SIDEBAR -->
-        <aside class="sidebar">
-
-            <div class="sidebar-header">
-
-                <div class="logo">
-                    Polymarket Trends
-                </div>
-
-                <div class="market-form">
-                    <input id="marketUrlInput" type="text" placeholder="Paste Polymarket URL..." />
-
-                    <button id="addMarketBtn">
-                        Add
-                    </button>
-                </div>
-
-            </div>
-
-            <div class="market-list" id="marketList"></div>
-
-        </aside>
-
-        <!-- MAIN -->
-        <main class="main">
-
-            <div class="topbar">
-
-                <div class="topbar-left">
-                    <h1 id="selectedTitle">
-                        Select a market
-                    </h1>
-
-                    <p id="selectedSlug">
-                        No market selected
-                    </p>
-                </div>
-
-                <div class="controls">
-
-                    <div class="control-group">
-                        <label>Lookback</label>
-
-                        <select id="daysSelect">
-                            <option value="1">1 day</option>
-                            <option value="3">3 days</option>
-                            <option value="7" selected>7 days</option>
-                            <option value="14">14 days</option>
-                            <option value="30">30 days</option>
-                        </select>
-                    </div>
-
-                    <div class="control-group">
-                        <label>Outcome</label>
-
-                        <select id="outcomeSelect">
-                            <option value="all">All</option>
-                        </select>
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="summary-grid" id="summaryGrid"></div>
-
-            <div class="metrics" id="metricsContainer"></div>
-
-            <div class="chart-wrapper">
-
-                <div class="chart-card">
-
-                    <canvas id="analysisChart"></canvas>
-
-                    <div class="empty-state" id="emptyState">
-                        Select a market from the sidebar
-                    </div>
-
-                </div>
-
-            </div>
-
-        </main>
-
+<div class="app">
+  <!-- ============================================================
+       SIDEBAR
+       ============================================================ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-row">
+        <div class="brand-mark">P</div>
+        <span class="brand-name">Polydictor</span>
+        <span class="brand-tag">Beta</span>
+      </div>
+      <div class="add-form">
+        <input class="add-input" id="addInput" type="text" placeholder="Paste Polymarket URL…" />
+        <button class="add-btn" id="addBtn"><span id="addLabel">+ Add</span></button>
+      </div>
     </div>
-
-    <script>
-
-        const API_BASE = "";
-
-        const metricOptions = [
-            "Price",
-            "PredictionRate",
-            "ProfitRate",
-            "WeightedProfitRate",
-            "TotalProfit"
-        ];
-
-        const outcomeColors = {
-            Yes: "#3b82f6",
-            No: "#ef4444",
-            Maybe: "#10b981"
-        };
-
-        const fallbackColors = [
-            "#f59e0b",
-            "#8b5cf6",
-            "#06b6d4",
-            "#ec4899"
-        ];
-
-        const metricStyles = {
-            Price: {
-                borderDash: [],
-                width: 4,
-                opacity: 1
-            },
-
-            PredictionRate: {
-                borderDash: [10, 5],
-                width: 3,
-                opacity: 0.95
-            },
-
-            ProfitRate: {
-                borderDash: [3, 3],
-                width: 2,
-                opacity: 0.9
-            },
-
-            WeightedProfitRate: {
-                borderDash: [15, 5, 3, 5],
-                width: 2,
-                opacity: 0.8
-            },
-
-            TotalProfit: {
-                borderDash: [],
-                width: 3,
-                opacity: 0.75,
-                yAxisID: "profitAxis"
-            }
-        };
-
-        let selectedMetricsState = {
-            Price: true,
-            PredictionRate: true,
-            ProfitRate: false,
-            WeightedProfitRate: false,
-            TotalProfit: false
-        };
-
-        let trackedMarkets = [];
-        let selectedMarket = null;
-        let chart = null;
-        let analysisData = [];
-
-        const marketListEl = document.getElementById("marketList");
-        const selectedTitleEl = document.getElementById("selectedTitle");
-        const selectedSlugEl = document.getElementById("selectedSlug");
-        const daysSelectEl = document.getElementById("daysSelect");
-        const outcomeSelectEl = document.getElementById("outcomeSelect");
-        const metricsContainerEl = document.getElementById("metricsContainer");
-        const summaryGridEl = document.getElementById("summaryGrid");
-        const emptyStateEl = document.getElementById("emptyState");
-
-        async function fetchTrackedMarkets() {
-
-            try {
-
-                const response = await fetch(`${API_BASE}/tracked`);
-
-                trackedMarkets = await response.json();
-
-                renderMarketList();
-
-            } catch (err) {
-
-                console.error(err);
-
-            }
-        }
-
-        function renderMarketList() {
-
-            marketListEl.innerHTML = "";
-
-            trackedMarkets.forEach(market => {
-
-                const card = document.createElement("div");
-
-                card.className = "market-card";
-
-                if (
-                    selectedMarket &&
-                    selectedMarket.MarketId === market.MarketId
-                ) {
-                    card.classList.add("active");
-                }
-
-                card.innerHTML = `
-        <img src="${market.Image}" />
-
-        <div class="market-info">
-          <div class="market-title">
-            ${market.Question}
-          </div>
-
-          <div class="market-slug">
-            ${market.Slug}
-          </div>
-        </div>
-      `;
-
-                card.addEventListener("click", () => {
-                    selectMarket(market);
-                });
-
-                marketListEl.appendChild(card);
-
-            });
-        }
-
-        async function selectMarket(market) {
-
-            selectedMarket = market;
-
-            renderMarketList();
-
-            selectedTitleEl.textContent = market.Question;
-            selectedSlugEl.textContent = market.Slug;
-
-            await loadAnalysis();
-        }
-
-        async function loadAnalysis() {
-
-            if (!selectedMarket) return;
-
-            try {
-
-                document.body.classList.add("loading");
-
-                const response = await fetch(
-                    `${API_BASE}/get-market-analysis?marketId=${selectedMarket.MarketId}&days=${daysSelectEl.value}`
-                );
-
-                if (response.status === 204) {
-
-                    analysisData = [];
-
-                    showEmptyState(
-                        "⏳",
-                        "Loading market analysis",
-                        "This market is being processed.<br>Please come back later."
-                    );
-
-                    return;
-                }
-
-                analysisData = await response.json();
-
-                if (!analysisData || analysisData.length === 0) {
-
-                    showEmptyState(
-                        "📭",
-                        "No analysis data",
-                        "No analysis has been generated yet."
-                    );
-
-                    return;
-                }
-
-                emptyStateEl.style.display = "none";
-
-                populateOutcomeSelect();
-
-                renderMetricControls();
-
-                renderSummaryCards();
-
-                renderChart();
-
-            } catch (err) {
-
-                console.error(err);
-
-                showEmptyState(
-                    "⚠️",
-                    "Failed to load data",
-                    "Please try again later."
-                );
-
-            } finally {
-
-                document.body.classList.remove("loading");
-
-            }
-        }
-
-        function showEmptyState(icon, title, subtitle) {
-
-            if (chart) {
-                chart.destroy();
-                chart = null;
-            }
-
-            metricsContainerEl.innerHTML = "";
-            summaryGridEl.innerHTML = "";
-
-            emptyStateEl.style.display = "flex";
-
-            emptyStateEl.innerHTML = `
-      <div>
-        <div style="font-size:30px;margin-bottom:12px;">
-          ${icon}
-        </div>
-
-        <div style="font-size:18px;font-weight:700;margin-bottom:8px;">
-          ${title}
-        </div>
-
-        <div style="color:#94a3b8;">
-          ${subtitle}
+    <div class="sidebar-search">
+      <input class="search-box" id="searchBox" type="text" placeholder="Filter markets…" />
+    </div>
+    <div class="market-list" id="marketList"></div>
+  </aside>
+
+  <button class="sidebar-toggle" id="sidebarToggle">&#9664;</button>
+
+  <!-- ============================================================
+       MAIN
+       ============================================================ -->
+  <main class="main">
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <img class="topbar-img" id="tbImg" src="" alt="" />
+        <div style="min-width:0">
+          <div class="topbar-title" id="tbTitle">Select a market</div>
+          <div class="topbar-slug" id="tbSlug">Choose a tracked market from the sidebar</div>
         </div>
       </div>
-    `;
-        }
+      <div class="controls-row" id="ctrlRow">
+        <div class="pill-group" id="lookbackPills">
+          <button class="pill" data-d="1">24h</button>
+          <button class="pill on" data-d="7">7d</button>
+          <button class="pill" data-d="14">14d</button>
+          <button class="pill" data-d="30">30d</button>
+        </div>
+        <button class="refresh-btn" id="refreshBtn">&#8635; Refresh</button>
+        <div class="countdown" id="countdown">10:00</div>
+      </div>
+    </div>
 
-        function populateOutcomeSelect() {
+    <!-- Dashboard scroll area -->
+    <div class="dash-scroll" id="dashScroll">
 
-            const previous = outcomeSelectEl.value || "all";
+      <!-- Welcome state -->
+      <div id="stWelcome">
+        <div class="state-view">
+          <div class="state-icon">&#128200;</div>
+          <div class="state-h">Welcome to Polydictor</div>
+          <div class="state-p">Select a tracked market from the sidebar or add a new one to explore prediction rates, price history, and market trends.</div>
+          <svg class="ph-chart" viewBox="0 0 240 60">
+            <path class="ph-area" d="M0,45 Q40,35 80,38 T160,28 T240,32 L240,60 L0,60Z"/>
+            <path class="ph-line" d="M0,45 Q40,35 80,38 T160,28 T240,32"/>
+          </svg>
+        </div>
+      </div>
 
-            outcomeSelectEl.innerHTML = `
-      <option value="all">All</option>
-    `;
+      <!-- Loading state -->
+      <div id="stLoading" style="display:none">
+        <div class="state-view">
+          <div class="state-icon" style="background:var(--prediction-dim)">&#9203;</div>
+          <div class="state-h">Loading Analysis</div>
+          <div class="state-p">Fetching market data…</div>
+          <div class="ld-dots"><div class="ld-dot"></div><div class="ld-dot"></div><div class="ld-dot"></div></div>
+        </div>
+      </div>
 
-            const outcomes = new Set();
+      <!-- No data state -->
+      <div id="stNoData" style="display:none">
+        <div class="state-view">
+          <div class="state-icon" style="background:rgba(251,191,36,.1)">&#9200;</div>
+          <div class="state-h">Analysis In Progress</div>
+          <div class="state-p">Analysis data is still being generated for this market. Please come back later.</div>
+          <svg class="ph-chart" viewBox="0 0 240 60">
+            <path class="ph-area" d="M0,50 Q60,35 120,42 T240,30 L240,60 L0,60Z"/>
+            <path class="ph-line" d="M0,50 Q60,35 120,42 T240,30"/>
+          </svg>
+        </div>
+      </div>
 
-            analysisData.forEach(entry => {
-                entry.Outcomes.forEach(outcome => {
-                    outcomes.add(outcome.Outcome);
-                });
-            });
+      <!-- Error state -->
+      <div id="stError" style="display:none">
+        <div class="state-view">
+          <div class="state-icon" style="background:var(--red-dim)">&#9888;</div>
+          <div class="state-h" id="errH">Failed to Load</div>
+          <div class="state-p" id="errP">Please try again later.</div>
+        </div>
+      </div>
 
-            outcomes.forEach(outcome => {
+      <!-- Dashboard content -->
+      <div id="dashContent" style="display:none">
+        <div class="outcome-row" id="outcomeRow"></div>
 
-                const option = document.createElement("option");
+        <div class="chart-section">
+          <div class="chart-toolbar">
+            <div class="chart-toolbar-left" id="metricBar"></div>
+            <div class="chart-toolbar-right">
+              <button class="c-btn" id="resetZoom" title="Reset zoom">&#8634;</button>
+              <button class="c-btn" id="fsBtn" title="Fullscreen">&#9974;</button>
+            </div>
+          </div>
+          <div class="o-filters" id="outcomeBar"></div>
+          <div class="chart-box" id="chartBox">
+            <canvas id="mainCanvas"></canvas>
+          </div>
+        </div>
+      </div>
 
-                option.value = outcome;
-                option.textContent = outcome;
+    </div>
+  </main>
+</div>
 
-                outcomeSelectEl.appendChild(option);
+<!-- ================================================================
+     JAVASCRIPT
+     ================================================================
+     Architecture:
+       1. State — single global state object
+       2. API helpers
+       3. Toast system
+       4. Sidebar (add market, search, list, sparklines)
+       5. Topbar & controls
+       6. Data loading & state routing
+       7. Outcome cards
+       8. Chart system (Chart.js with zoom)
+       9. Auto-refresh
+       10. Init
+     ================================================================ -->
+<script>
+(function () {
+  'use strict';
 
-            });
+  // ============================================================
+  // 1. STATE
+  // ============================================================
+  const API = '';
 
-            if (
-                [...outcomeSelectEl.options]
-                    .some(o => o.value === previous)
-            ) {
-                outcomeSelectEl.value = previous;
-            }
-        }
+  const S = {
+    markets: [],
+    market: null,        // selected market object
+    data: [],            // analysis entries
+    days: 7,
+    metrics: {           // which chart lines are visible
+      PredictionRate: true,
+      Price: true,
+      ProfitRate: false,
+      WeightedProfitRate: false,
+      TotalProfit: false,
+    },
+    outcome: 'all',      // outcome filter
+    search: '',
+    adding: false,
+    fs: false,           // chart fullscreen
+    refreshMs: 10 * 60 * 1000,
+    cdSec: 600,
+    _refreshT: null,
+    _cdT: null,
+    sparkCache: {},      // marketId -> analysis snippet
+  };
 
-        function renderMetricControls() {
+  // Metric display config — order matters (PredictionRate first)
+  const METRICS = [
+    { k: 'PredictionRate',     label: 'Prediction Rate',    css: '--color-PredictionRate',     color: '#38bdf8',  dash: [],             w: 3.5, fill: false, hero: true },
+    { k: 'Price',              label: 'Price',              css: '--color-Price',              color: '#94a3b8',  dash: [6, 3],         w: 2,   fill: false },
+    { k: 'ProfitRate',         label: 'Profit Rate',        css: '--color-ProfitRate',         color: '#fbbf24',  dash: [3, 3],         w: 1.5, fill: false },
+    { k: 'WeightedProfitRate', label: 'Wtd Profit Rate',    css: '--color-WeightedProfitRate', color: '#a78bfa',  dash: [10, 4, 2, 4],  w: 1.5, fill: false },
+    { k: 'TotalProfit',        label: 'Total Profit',       css: '--color-TotalProfit',        color: '#f472b6',  dash: [],             w: 2,   fill: true, axis: 'profit' },
+  ];
 
-            metricsContainerEl.innerHTML = "";
+  // Outcome colors
+  const O_COLORS = { Yes: '#38bdf8', No: '#f87171' };
+  const O_FALLBACK = ['#a78bfa', '#34d399', '#fbbf24', '#fb923c', '#f472b6', '#22d3ee'];
+  function oColor(name, i) { return O_COLORS[name] || O_FALLBACK[i % O_FALLBACK.length]; }
 
-            metricOptions.forEach(metric => {
+  // ============================================================
+  // 2. API HELPERS
+  // ============================================================
+  async function apiGet(path) {
+    const r = await fetch(API + path);
+    if (r.status === 204) return null;
+    if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+    return r.json();
+  }
+  async function apiPost(path) {
+    const r = await fetch(API + path, { method: 'POST' });
+    if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+    return r;
+  }
 
-                const chip = document.createElement("label");
+  // ============================================================
+  // 3. TOASTS
+  // ============================================================
+  const toastEl = document.getElementById('toasts');
+  function toast(msg, ok = true) {
+    const t = document.createElement('div');
+    t.className = `toast ${ok ? 'toast-ok' : 'toast-err'}`;
+    t.textContent = msg;
+    toastEl.appendChild(t);
+    setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 250); }, 3500);
+  }
 
-                chip.className = "metric-chip";
+  // ============================================================
+  // 4. SIDEBAR
+  // ============================================================
+  const sidebar = document.getElementById('sidebar');
+  const togBtn = document.getElementById('sidebarToggle');
+  const listEl = document.getElementById('marketList');
+  const addInput = document.getElementById('addInput');
+  const addBtn = document.getElementById('addBtn');
+  const addLabel = document.getElementById('addLabel');
+  const searchBox = document.getElementById('searchBox');
 
-                chip.innerHTML = `
-        <input
-          type="checkbox"
-          value="${metric}"
-          ${selectedMetricsState[metric] ? "checked" : ""}
-        />
+  togBtn.onclick = () => {
+    sidebar.classList.toggle('collapsed');
+    togBtn.innerHTML = sidebar.classList.contains('collapsed') ? '&#9654;' : '&#9664;';
+  };
 
-        <span>${metric}</span>
+  // Add market
+  async function addMarket() {
+    const url = addInput.value.trim();
+    if (!url || S.adding) return;
+    S.adding = true;
+    addBtn.disabled = true;
+    addLabel.innerHTML = '<span class="btn-spinner"></span>';
+    try {
+      await apiPost('/tracked?url=' + encodeURIComponent(url));
+      addInput.value = '';
+      toast('Market added');
+      await loadMarkets();
+    } catch (e) { toast('Failed: ' + e.message, false); }
+    finally { S.adding = false; addBtn.disabled = false; addLabel.textContent = '+ Add'; }
+  }
+  addBtn.onclick = addMarket;
+  addInput.onkeydown = e => { if (e.key === 'Enter') addMarket(); };
+
+  // Search
+  searchBox.oninput = () => { S.search = searchBox.value.toLowerCase(); renderList(); };
+
+  // Load markets
+  async function loadMarkets() {
+    try { S.markets = (await apiGet('/tracked')) || []; } catch { S.markets = []; }
+    renderList();
+    prefetchSparks();
+  }
+
+  // Render list
+  function renderList() {
+    let list = [...S.markets];
+    if (S.search) list = list.filter(m =>
+      m.Question.toLowerCase().includes(S.search) ||
+      m.Slug.toLowerCase().includes(S.search) ||
+      m.MarketId.includes(S.search)
+    );
+
+    listEl.innerHTML = '';
+
+    if (!S.markets.length) {
+      // Skeletons
+      for (let i = 0; i < 4; i++) {
+        const d = document.createElement('div');
+        d.style.cssText = 'display:flex;gap:11px;padding:11px;';
+        d.innerHTML = '<div class="skel" style="width:48px;height:48px;flex-shrink:0;border-radius:8px"></div><div style="flex:1;display:flex;flex-direction:column;gap:7px;justify-content:center"><div class="skel" style="height:11px;border-radius:5px"></div><div class="skel" style="height:11px;width:55%;border-radius:5px"></div></div>';
+        listEl.appendChild(d);
+      }
+      return;
+    }
+
+    if (!list.length) {
+      listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-4);font-size:12px">No matches</div>';
+      return;
+    }
+
+    list.forEach(m => {
+      const active = S.market && S.market.MarketId === m.MarketId;
+      const card = document.createElement('div');
+      card.className = 'mkt-card' + (active ? ' active' : '');
+      card.innerHTML = `
+        <img class="mkt-img" src="${esc(m.Image)}" alt="" loading="lazy" onerror="this.style.display='none'" />
+        <div class="mkt-body">
+          <div class="mkt-q">${esc(m.Question)}</div>
+          <div class="mkt-id">#${esc(m.MarketId)}</div>
+        </div>
+        <canvas class="mkt-spark" id="sp-${m.MarketId}"></canvas>
+      `;
+      card.onclick = () => selectMarket(m);
+      listEl.appendChild(card);
+      drawSpark(m.MarketId);
+    });
+  }
+
+  function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+  // Sparklines from cached data
+  function drawSpark(id) {
+    const c = document.getElementById('sp-' + id);
+    if (!c) return;
+    const arr = S.sparkCache[id];
+    const ctx = c.getContext('2d');
+    c.width = 50 * 2; c.height = 24 * 2; ctx.scale(2, 2);
+
+    if (!arr || arr.length < 2) {
+      ctx.strokeStyle = 'rgba(148,163,184,.15)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(4, 12); ctx.lineTo(46, 12); ctx.stroke();
+      return;
+    }
+
+    // Use PredictionRate for the sparkline (hero metric)
+    const vals = arr.map(d => {
+      const o = d.Outcomes.find(x => x.Outcome === 'Yes') || d.Outcomes[0];
+      return o ? o.PredictionRate : null;
+    }).filter(v => v !== null);
+    if (vals.length < 2) return;
+
+    const mn = Math.min(...vals), mx = Math.max(...vals), rng = mx - mn || .01;
+    const up = vals[vals.length - 1] >= vals[0];
+    const col = up ? '#34d399' : '#f87171';
+
+    ctx.strokeStyle = col; ctx.lineWidth = 1.3; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    vals.forEach((v, i) => {
+      const x = 3 + (i / (vals.length - 1)) * 44;
+      const y = 2 + 20 - ((v - mn) / rng) * 20;
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    });
+    ctx.stroke();
+
+    // Gradient fill
+    ctx.lineTo(47, 22); ctx.lineTo(3, 22); ctx.closePath();
+    const g = ctx.createLinearGradient(0, 0, 0, 24);
+    g.addColorStop(0, up ? 'rgba(52,211,153,.18)' : 'rgba(248,113,113,.18)');
+    g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g; ctx.fill();
+  }
+
+  async function prefetchSparks() {
+    await Promise.all(S.markets.map(async m => {
+      try {
+        const d = await apiGet('/get-market-analysis?marketId=' + m.MarketId + '&days=3');
+        if (d && d.length) S.sparkCache[m.MarketId] = d;
+      } catch {}
+    }));
+    renderList();
+  }
+
+  // ============================================================
+  // 5. SELECT MARKET & TOPBAR
+  // ============================================================
+  const tbImg = document.getElementById('tbImg');
+  const tbTitle = document.getElementById('tbTitle');
+  const tbSlug = document.getElementById('tbSlug');
+  const ctrlRow = document.getElementById('ctrlRow');
+
+  async function selectMarket(m) {
+    S.market = m;
+    renderList();
+    tbTitle.innerHTML = `<a href="${esc(m.URL)}" target="_blank" rel="noopener">${esc(m.Question)}</a> <span style="font-size:12px;color:var(--text-4)">&#8599;</span>`;
+    tbSlug.textContent = '#' + m.MarketId + ' · ' + m.Slug;
+    tbImg.src = m.Image; tbImg.style.display = 'block';
+    ctrlRow.style.display = 'flex';
+    await loadAnalysis();
+    resetTimer();
+  }
+
+  // Lookback pills
+  document.getElementById('lookbackPills').onclick = e => {
+    const b = e.target.closest('.pill');
+    if (!b) return;
+    document.querySelectorAll('#lookbackPills .pill').forEach(p => p.classList.remove('on'));
+    b.classList.add('on');
+    S.days = +b.dataset.d;
+    loadAnalysis();
+  };
+
+  document.getElementById('refreshBtn').onclick = () => { loadAnalysis(); resetTimer(); };
+
+  // ============================================================
+  // 6. DATA LOADING & STATE ROUTING
+  // ============================================================
+  const STATES = ['stWelcome', 'stLoading', 'stNoData', 'stError', 'dashContent'];
+  function showSt(id) { STATES.forEach(s => document.getElementById(s).style.display = s === id ? '' : 'none'); }
+
+  async function loadAnalysis() {
+    if (!S.market) return;
+    showSt('stLoading');
+    try {
+      const d = await apiGet('/get-market-analysis?marketId=' + S.market.MarketId + '&days=' + S.days);
+      if (!d || !d.length) { showSt('stNoData'); return; }
+      S.data = d;
+      S.sparkCache[S.market.MarketId] = d;
+      showSt('dashContent');
+      renderOutcomeCards();
+      renderMetricBar();
+      renderOutcomeBar();
+      renderChart();
+    } catch (e) {
+      document.getElementById('errH').textContent = 'Failed to Load Data';
+      document.getElementById('errP').textContent = e.message || 'Unknown error';
+      showSt('stError');
+      toast('Error: ' + e.message, false);
+    }
+  }
+
+  // ============================================================
+  // 7. OUTCOME CARDS
+  // ============================================================
+  const outcomeRowEl = document.getElementById('outcomeRow');
+
+  function renderOutcomeCards() {
+    outcomeRowEl.innerHTML = '';
+    if (!S.data.length) return;
+
+    const latest = S.data[S.data.length - 1];
+    const prev = S.data.length >= 2 ? S.data[S.data.length - 2] : null;
+
+    latest.Outcomes.forEach((o, idx) => {
+      const col = oColor(o.Outcome, idx);
+      const pO = prev ? prev.Outcomes.find(x => x.Outcome === o.Outcome) : null;
+
+      // PredictionRate delta
+      const predDelta = pO ? o.PredictionRate - pO.PredictionRate : 0;
+
+      // Divergence: prediction vs price
+      const div = o.PredictionRate - o.Price;
+      const divAbs = Math.abs(div);
+      const divLabel = div > 0.001 ? '+' + (div * 100).toFixed(1) + '%' : div < -0.001 ? (div * 100).toFixed(1) + '%' : '0.0%';
+      const divClass = div > 0.005 ? 'up' : div < -0.005 ? 'down' : 'flat';
+
+      // Trend from recent data
+      const prices = S.data.map(e => e.Outcomes.find(x => x.Outcome === o.Outcome)?.PredictionRate || 0);
+      const sparkData = S.data.map(e => e.Outcomes.find(x => x.Outcome === o.Outcome)?.PredictionRate).filter(Boolean);
+
+      // Delta pill
+      const deltaVal = predDelta;
+      const deltaClass = deltaVal > 0.001 ? 'pos' : deltaVal < -0.001 ? 'neg' : 'zero';
+      const deltaText = deltaVal > 0 ? '+' + (deltaVal * 100).toFixed(2) + '%' : (deltaVal * 100).toFixed(2) + '%';
+
+      const card = document.createElement('div');
+      card.className = 'o-card';
+      card.style.setProperty('--card-color', col);
+
+      card.innerHTML = `
+        <div class="o-header">
+          <div class="o-name" style="color:${col}">${esc(o.Outcome)}</div>
+          <div class="o-delta ${deltaClass}">${deltaText}</div>
+        </div>
+        <div class="o-prediction-label">Prediction Rate</div>
+        <div class="o-prediction-value">${(o.PredictionRate * 100).toFixed(1)}<span style="font-size:16px;opacity:.5">%</span></div>
+        <div class="o-price-row">
+          <span class="o-price-label">Price</span>
+          <span class="o-price-value">${(o.Price * 100).toFixed(1)}¢</span>
+          <span class="o-divergence ${divClass}" title="PredictionRate − Price">${divLabel} div</span>
+        </div>
+        <div class="o-metrics">
+          <div class="o-m"><div class="o-m-label">Profit Rate</div><div class="o-m-val" style="color:var(--color-ProfitRate)">${(o.ProfitRate * 100).toFixed(2)}%</div></div>
+          <div class="o-m"><div class="o-m-label">Wtd Profit</div><div class="o-m-val" style="color:var(--color-WeightedProfitRate)">${(o.WeightedProfitRate * 100).toFixed(1)}%</div></div>
+          <div class="o-m"><div class="o-m-label">Total Profit</div><div class="o-m-val" style="color:var(--color-TotalProfit)">${compact(o.TotalProfit)}</div></div>
+        </div>
+        <canvas class="o-spark" id="osp-${idx}"></canvas>
       `;
 
-                const checkbox = chip.querySelector("input");
+      outcomeRowEl.appendChild(card);
 
-                checkbox.addEventListener("change", () => {
+      // Draw card sparkline (PredictionRate)
+      requestAnimationFrame(() => drawCardSpark('osp-' + idx, sparkData, col));
+    });
+  }
 
-                    selectedMetricsState[metric] = checkbox.checked;
+  function drawCardSpark(id, data, col) {
+    const c = document.getElementById(id);
+    if (!c || data.length < 2) return;
+    const ctx = c.getContext('2d');
+    const r = c.getBoundingClientRect();
+    c.width = r.width * 2; c.height = r.height * 2;
+    ctx.scale(2, 2);
+    const w = r.width, h = r.height, p = 2;
+    const mn = Math.min(...data), mx = Math.max(...data), rng = mx - mn || .01;
 
-                    renderChart();
+    ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    data.forEach((v, i) => {
+      const x = p + (i / (data.length - 1)) * (w - p * 2);
+      const y = p + (h - p * 2) - ((v - mn) / rng) * (h - p * 2);
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    });
+    ctx.stroke();
 
-                });
+    // Fill
+    ctx.lineTo(p + (w - p * 2), h - p);
+    ctx.lineTo(p, h - p);
+    ctx.closePath();
+    const g = ctx.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, col + '25');
+    g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g; ctx.fill();
+  }
 
-                metricsContainerEl.appendChild(chip);
+  function compact(n) {
+    if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+    if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+    return n.toFixed(2);
+  }
 
-            });
+  // ============================================================
+  // 8. CHART SYSTEM
+  // ============================================================
+  let chart = null;
+  const chartBox = document.getElementById('chartBox');
+  const metricBarEl = document.getElementById('metricBar');
+  const outcomeBarEl = document.getElementById('outcomeBar');
+
+  // Metric toggles
+  function renderMetricBar() {
+    metricBarEl.innerHTML = '';
+    METRICS.forEach(m => {
+      const btn = document.createElement('button');
+      btn.className = 'm-toggle' + (S.metrics[m.k] ? ' on' : '');
+      btn.style.setProperty('--toggle-color', m.color + '60');
+      btn.innerHTML = `<span class="m-dot" style="background:${m.color}"></span>${m.label}`;
+      btn.onclick = () => {
+        S.metrics[m.k] = !S.metrics[m.k];
+        btn.classList.toggle('on', S.metrics[m.k]);
+        renderChart();
+      };
+      metricBarEl.appendChild(btn);
+    });
+  }
+
+  // Outcome filter pills
+  function renderOutcomeBar() {
+    outcomeBarEl.innerHTML = '';
+    const outcomes = uniqueOutcomes();
+
+    const all = document.createElement('button');
+    all.className = 'o-filter-pill' + (S.outcome === 'all' ? ' on' : '');
+    all.textContent = 'All';
+    all.style.setProperty('--pill-color', 'var(--border-accent)');
+    all.onclick = () => { S.outcome = 'all'; renderOutcomeBar(); renderChart(); };
+    outcomeBarEl.appendChild(all);
+
+    outcomes.forEach((name, i) => {
+      const col = oColor(name, i);
+      const btn = document.createElement('button');
+      btn.className = 'o-filter-pill' + (S.outcome === name ? ' on' : '');
+      btn.textContent = name;
+      btn.style.setProperty('--pill-color', col);
+      if (S.outcome === name) btn.style.color = col;
+      btn.onclick = () => { S.outcome = name; renderOutcomeBar(); renderChart(); };
+      outcomeBarEl.appendChild(btn);
+    });
+  }
+
+  function uniqueOutcomes() {
+    const s = new Set();
+    S.data.forEach(e => e.Outcomes.forEach(o => s.add(o.Outcome)));
+    return [...s];
+  }
+
+  // Main chart render
+  function renderChart() {
+    if (!S.data.length) return;
+    const data = S.data;
+    const active = METRICS.filter(m => S.metrics[m.k]);
+    const outcomes = uniqueOutcomes();
+    const hasProfitAxis = active.some(m => m.axis === 'profit');
+    const datasets = [];
+
+    // Check if we should draw divergence fill (both PredictionRate and Price on, single outcome or first outcome)
+    const showDiv = S.metrics.PredictionRate && S.metrics.Price;
+
+    active.forEach(metric => {
+      outcomes.forEach((oName, oIdx) => {
+        if (S.outcome !== 'all' && S.outcome !== oName) return;
+        const col = oColor(oName, oIdx);
+
+        // For PredictionRate: bright, prominent
+        // For Price: muted
+        // For secondary: use metric color blended with outcome color
+        let lineColor;
+        if (metric.hero) {
+          lineColor = col; // outcome color, bright
+        } else if (metric.k === 'Price') {
+          lineColor = adjustAlpha(col, 0.45); // muted version of outcome color
+        } else {
+          lineColor = metric.color;
         }
 
-        function getSelectedMetrics() {
-
-            return Object.entries(selectedMetricsState)
-                .filter(([_, enabled]) => enabled)
-                .map(([metric]) => metric);
-        }
-
-        function getOutcomeColor(name, index) {
-
-            if (outcomeColors[name]) {
-                return outcomeColors[name];
-            }
-
-            return fallbackColors[index % fallbackColors.length];
-        }
-
-        function renderSummaryCards() {
-
-            summaryGridEl.innerHTML = "";
-
-            const latest = analysisData[analysisData.length - 1];
-
-            if (!latest) return;
-
-            latest.Outcomes.forEach((outcome, index) => {
-
-                const card = document.createElement("div");
-
-                card.className = "summary-card";
-
-                const color = getOutcomeColor(outcome.Outcome, index);
-
-                card.innerHTML = `
-        <div class="summary-label">
-          ${outcome.Outcome}
-        </div>
-
-        <div
-          class="summary-value"
-          style="color:${color};"
-        >
-          ${(outcome.Price * 100).toFixed(1)}%
-        </div>
-
-        <div class="summary-sub">
-          Prediction ${(outcome.PredictionRate * 100).toFixed(1)}%
-        </div>
-
-        <div class="summary-sub">
-          Profit ${(outcome.ProfitRate * 100).toFixed(2)}%
-        </div>
-      `;
-
-                summaryGridEl.appendChild(card);
-
-            });
-        }
-
-        function renderChart() {
-
-            if (!analysisData.length) return;
-
-            emptyStateEl.style.display = "none";
-
-            const selectedMetrics = getSelectedMetrics();
-
-            const selectedOutcome = outcomeSelectEl.value;
-
-            const datasets = [];
-
-            const uniqueOutcomes = [];
-
-            analysisData.forEach(entry => {
-
-                entry.Outcomes.forEach(outcome => {
-
-                    if (!uniqueOutcomes.includes(outcome.Outcome)) {
-                        uniqueOutcomes.push(outcome.Outcome);
-                    }
-
-                });
-
-            });
-
-            selectedMetrics.forEach(metric => {
-
-                const style = metricStyles[metric];
-
-                uniqueOutcomes.forEach((outcomeName, index) => {
-
-                    if (
-                        selectedOutcome !== "all" &&
-                        selectedOutcome !== outcomeName
-                    ) {
-                        return;
-                    }
-
-                    const values = [];
-
-                    analysisData.forEach(entry => {
-
-                        const outcome = entry.Outcomes.find(
-                            o => o.Outcome === outcomeName
-                        );
-
-                        if (!outcome) return;
-
-                        values.push({
-                            x: entry.LookupTime,
-                            y: outcome[metric]
-                        });
-
-                    });
-
-                    datasets.push({
-
-                        label: `${outcomeName} - ${metric}`,
-
-                        data: values,
-
-                        borderColor: getOutcomeColor(outcomeName, index),
-
-                        backgroundColor: getOutcomeColor(outcomeName, index),
-
-                        borderDash: style.borderDash,
-
-                        borderWidth: style.width,
-
-                        tension: 0.3,
-
-                        pointRadius: 1.5,
-
-                        fill: false,
-
-                        yAxisID: style.yAxisID || "mainAxis"
-
-                    });
-
-                });
-
-            });
-
-            if (chart) {
-                chart.destroy();
-            }
-
-            const ctx = document
-                .getElementById("analysisChart")
-                .getContext("2d");
-
-            chart = new Chart(ctx, {
-
-                type: "line",
-
-                data: {
-                    datasets
-                },
-
-                options: {
-
-                    responsive: true,
-
-                    maintainAspectRatio: false,
-
-                    interaction: {
-                        mode: "nearest",
-                        intersect: false
-                    },
-
-                    plugins: {
-
-                        legend: {
-                            labels: {
-                                color: "#e2e8f0"
-                            }
-                        },
-
-                        tooltip: {
-                            backgroundColor: "#111827",
-                            borderColor: "rgba(255,255,255,0.1)",
-                            borderWidth: 1
-                        }
-                    },
-
-                    scales: {
-
-                        x: {
-
-                            type: "time",
-
-                            time: {
-                                tooltipFormat: "DDD T"
-                            },
-
-                            ticks: {
-                                color: "#94a3b8"
-                            },
-
-                            grid: {
-                                color: "rgba(255,255,255,0.05)"
-                            }
-                        },
-
-                        mainAxis: {
-
-                            type: "linear",
-
-                            position: "left",
-
-                            ticks: {
-                                color: "#94a3b8"
-                            },
-
-                            grid: {
-                                color: "rgba(255,255,255,0.05)"
-                            }
-                        },
-
-                        profitAxis: {
-
-                            type: "linear",
-
-                            position: "right",
-
-                            ticks: {
-                                color: "#c084fc"
-                            },
-
-                            grid: {
-                                drawOnChartArea: false
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        async function addMarket() {
-
-            const input = document.getElementById("marketUrlInput");
-
-            const url = input.value.trim();
-
-            if (!url) return;
-
-            try {
-
-                const response = await fetch(
-                    `${API_BASE}/tracked?url=${encodeURIComponent(url)}`,
-                    {
-                        method: "POST"
-                    }
-                );
-
-                if (!response.ok) {
-                    throw new Error("Failed");
-                }
-
-                input.value = "";
-
-                await fetchTrackedMarkets();
-
-            } catch (err) {
-
-                console.error(err);
-
-                alert("Failed to add market");
-
-            }
-        }
-
-        document
-            .getElementById("addMarketBtn")
-            .addEventListener("click", addMarket);
-
-        document
-            .getElementById("marketUrlInput")
-            .addEventListener("keydown", e => {
-
-                if (e.key === "Enter") {
-                    addMarket();
-                }
-
-            });
-
-        daysSelectEl.addEventListener("change", loadAnalysis);
-
-        outcomeSelectEl.addEventListener("change", renderChart);
-
-        fetchTrackedMarkets();
-
-    </script>
-
+        const values = data.map(entry => {
+          const o = entry.Outcomes.find(x => x.Outcome === oName);
+          return o ? { x: entry.LookupTime, y: o[metric.k] } : null;
+        }).filter(Boolean);
+
+        const ds = {
+          label: `${oName} · ${metric.label}`,
+          data: values,
+          borderColor: lineColor,
+          backgroundColor: metric.fill ? lineColor + '18' : lineColor,
+          borderDash: metric.dash,
+          borderWidth: metric.hero ? metric.w : metric.w,
+          tension: 0.35,
+          pointRadius: data.length > 60 ? 0 : metric.hero ? 2.5 : 1.5,
+          pointHoverRadius: 5,
+          pointBackgroundColor: lineColor,
+          pointBorderColor: 'transparent',
+          fill: metric.fill ? 'origin' : false,
+          yAxisID: metric.axis === 'profit' ? 'profitAxis' : 'y',
+          // Store metadata for divergence plugin
+          _metric: metric.k,
+          _outcome: oName,
+        };
+
+        datasets.push(ds);
+      });
+    });
+
+    if (chart) { chart.destroy(); chart = null; }
+
+    const ctx = document.getElementById('mainCanvas').getContext('2d');
+
+    // Custom plugin: draw shaded divergence area between PredictionRate and Price
+    const divergencePlugin = {
+      id: 'divergenceFill',
+      beforeDatasetsDraw(chart) {
+        if (!showDiv) return;
+        const ctx = chart.ctx;
+        // For each outcome, find prediction & price datasets
+        const outcomesToDraw = S.outcome === 'all' ? uniqueOutcomes() : [S.outcome];
+        outcomesToDraw.forEach((oName, oIdx) => {
+          const predDs = chart.data.datasets.find(d => d._metric === 'PredictionRate' && d._outcome === oName);
+          const priceDs = chart.data.datasets.find(d => d._metric === 'Price' && d._outcome === oName);
+          if (!predDs || !priceDs) return;
+          const predMeta = chart.getDatasetMeta(chart.data.datasets.indexOf(predDs));
+          const priceMeta = chart.getDatasetMeta(chart.data.datasets.indexOf(priceDs));
+          if (!predMeta.data.length || !priceMeta.data.length) return;
+
+          const len = Math.min(predMeta.data.length, priceMeta.data.length);
+          if (len < 2) return;
+
+          ctx.save();
+          ctx.globalAlpha = 0.06;
+
+          // Draw filled region between the two lines
+          ctx.beginPath();
+          for (let i = 0; i < len; i++) {
+            const x = predMeta.data[i].x;
+            const y = predMeta.data[i].y;
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+          }
+          for (let i = len - 1; i >= 0; i--) {
+            ctx.lineTo(priceMeta.data[i].x, priceMeta.data[i].y);
+          }
+          ctx.closePath();
+          ctx.fillStyle = oColor(oName, oIdx);
+          ctx.fill();
+          ctx.restore();
+        });
+      },
+    };
+
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: { datasets },
+      plugins: [divergencePlugin],
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 500, easing: 'easeOutQuart' },
+        interaction: { mode: 'nearest', axis: 'x', intersect: false },
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: '#64748b', padding: 14, usePointStyle: true, pointStyle: 'circle',
+              font: { size: 11, family: "'Inter', sans-serif" },
+            },
+          },
+          tooltip: {
+            backgroundColor: 'rgba(12,17,32,.95)',
+            titleColor: '#f1f5f9',
+            bodyColor: '#cbd5e1',
+            borderColor: 'rgba(255,255,255,.08)',
+            borderWidth: 1,
+            padding: 12,
+            cornerRadius: 10,
+            titleFont: { weight: '600', size: 12 },
+            bodyFont: { family: "'JetBrains Mono', monospace", size: 11.5 },
+            callbacks: {
+              title(items) {
+                if (!items.length) return '';
+                return luxon.DateTime.fromISO(items[0].raw.x).toFormat('MMM dd, yyyy · HH:mm');
+              },
+              label(item) {
+                const v = item.raw.y;
+                const l = item.dataset.label;
+                if (l.includes('Total Profit')) return ` ${l}: ${compact(v)}`;
+                if (v >= 0 && v <= 1) return ` ${l}: ${(v * 100).toFixed(2)}%`;
+                return ` ${l}: ${v.toFixed(4)}`;
+              },
+            },
+          },
+          zoom: {
+            pan: { enabled: true, mode: 'x' },
+            zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' },
+          },
+        },
+        scales: {
+          x: {
+            type: 'time',
+            time: {
+              tooltipFormat: 'DDD T',
+              displayFormats: { hour: 'HH:mm', day: 'MMM dd', week: 'MMM dd' },
+            },
+            ticks: { color: '#475569', maxTicksLimit: 10, font: { size: 11 } },
+            grid: { color: 'rgba(255,255,255,.025)', drawBorder: false },
+          },
+          y: {
+            type: 'linear', position: 'left',
+            ticks: {
+              color: '#475569',
+              font: { size: 11, family: "'JetBrains Mono', monospace" },
+              callback: v => (v * 100).toFixed(0) + '%',
+            },
+            grid: { color: 'rgba(255,255,255,.03)', drawBorder: false },
+          },
+          profitAxis: {
+            type: 'linear', position: 'right', display: hasProfitAxis,
+            ticks: {
+              color: '#f472b6',
+              font: { size: 11, family: "'JetBrains Mono', monospace" },
+              callback: v => compact(v),
+            },
+            grid: { drawOnChartArea: false, drawBorder: false },
+          },
+        },
+      },
+    });
+  }
+
+  // Color utility: desaturate/alpha shift for muted lines
+  function adjustAlpha(hex, factor) {
+    // Blend toward gray
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    const gray = 148; // ~#94
+    const mix = (c) => Math.round(c + (gray - c) * (1 - factor));
+    return `rgb(${mix(r)},${mix(g)},${mix(b)})`;
+  }
+
+  // Reset zoom
+  document.getElementById('resetZoom').onclick = () => { if (chart) chart.resetZoom(); };
+
+  // Fullscreen
+  const fsBtn = document.getElementById('fsBtn');
+  fsBtn.onclick = () => {
+    S.fs = !S.fs;
+    chartBox.classList.toggle('fullscreen', S.fs);
+    fsBtn.innerHTML = S.fs ? '&#10005;' : '&#9974;';
+    setTimeout(() => { if (chart) chart.resize(); }, 350);
+  };
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && S.fs) { S.fs = false; chartBox.classList.remove('fullscreen'); fsBtn.innerHTML = '&#9974;'; setTimeout(() => { if (chart) chart.resize(); }, 350); }
+  });
+
+  // ============================================================
+  // 9. AUTO-REFRESH
+  // ============================================================
+  const cdEl = document.getElementById('countdown');
+
+  function resetTimer() {
+    clearTimeout(S._refreshT);
+    clearInterval(S._cdT);
+    S.cdSec = S.refreshMs / 1000;
+    updateCd();
+    S._cdT = setInterval(() => { S.cdSec = Math.max(0, S.cdSec - 1); updateCd(); }, 1000);
+    S._refreshT = setTimeout(async () => {
+      if (S.market) { await loadAnalysis(); resetTimer(); }
+    }, S.refreshMs);
+  }
+
+  function updateCd() {
+    const m = Math.floor(S.cdSec / 60);
+    const s = S.cdSec % 60;
+    cdEl.textContent = m + ':' + String(s).padStart(2, '0');
+  }
+
+  // ============================================================
+  // 10. INIT
+  // ============================================================
+  loadMarkets();
+
+})();
+</script>
 </body>
-
 </html>
