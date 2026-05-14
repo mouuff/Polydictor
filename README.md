@@ -2,25 +2,31 @@
 
 **Prediction market analytics powered by trader performance.**
 
-Polydictor analyzes [Polymarket](https://polymarket.com) betting markets by evaluating the track record of top token holders. Instead of predicting outcomes directly, it surfaces which outcomes are favored by historically profitable traders — giving you a data-driven edge.
+Polydictor analyzes [Polymarket](https://polymarket.com) betting markets by evaluating the track record of top token holders. Instead of predicting outcomes directly, it surfaces which outcomes are favored by historically profitable traders - giving you a data-driven edge.
 
 ## How It Works
 
-1. **Track a market** — Add any Polymarket event URL
-2. **Analyze holders** — Polydictor fetches the top 20 token holders for each outcome and scores them based on their full trading history
-3. **Surface signals** — Key metrics are computed per outcome:
-   - **Prediction Rate** — What percentage of a holder's past trades were profitable
-   - **Profit Rate** — Net profit divided by total investment (ROI)
-   - **Weighted Profit Rate** — Profit rate weighted by trade magnitude (big traders count more)
-   - **Total Profit** — Aggregate realized PnL across all holders
-4. **Track over time** — A continuous loop re-analyzes at a configurable interval, building a historical dataset you can chart and compare
+1. **Track a market** - Add any Polymarket event URL
+2. **Analyze holders** - Polydictor fetches the top token holders for each outcome and scores them based on their full trading history
+3. **Surface signals** - Key metrics are computed per outcome:
+   - **Prediction Rate** - What percentage of a holder's past trades were profitable
+   - **Profit Rate** - Net profit divided by total investment (ROI)
+   - **Weighted Profit Rate** - Profit rate weighted by trade magnitude (big traders count more)
+   - **Total Profit** - Aggregate realized PnL across all holders
+4. **Track over time** - A continuous loop re-analyzes at a configurable interval, building a historical dataset you can chart and compare
+
+## Demo
+![Web UI demo](./docs/demi-1.png)
+
+Explanation:
+- The `prediction rate` for a market outcome represents the average percentage of profitable trades among the top traders for that outcome.
+- The spread is the difference between the `prediction rate` between the two outcomes. A large spread often indicates that one outcome is more likely to win than the other.
 
 ## Quick Start
 
 ### Prerequisites
 
-- **Go 1.25+**
-- **GCC** (required by the SQLite driver — `go-sqlite3` uses cgo)
+- **[Go 1.25+](https://go.dev/dl/)**
 
 ### Build
 
@@ -31,10 +37,10 @@ go build -o polydictor ./cmd/polydictor
 ### Run the Web UI
 
 ```bash
-# 1. Start the analysis loop (runs in background, analyzes every 15 min)
+# 1. Start the analysis loop (runs in background, analyzes tracked markets every 15 min)
 ./polydictor analyze-loop -db store.db
 
-# 2. In another terminal, start the web server
+# 2. In another terminal, start the web server (serving the API and web UI)
 ./polydictor serve -db store.db
 ```
 
@@ -100,9 +106,9 @@ pkg/polyflow/         Analysis engine & SQLite storage
 web-ui/dist/          Single-file web dashboard (HTML/CSS/JS)
 ```
 
-- **polyapi** — Wraps the Polymarket Gamma and Data APIs with per-endpoint rate limiting
-- **polyflow** — Core analysis logic: fetches holders, scores users based on closed positions, aggregates metrics per outcome, stores results in SQLite
-- **Web UI** — Self-contained HTML file using Chart.js for time-series visualization. No build step required
+- **polyapi** - Wraps the Polymarket Gamma and Data APIs with per-endpoint rate limiting
+- **polyflow** - Core analysis logic: fetches holders, scores users based on closed positions, aggregates metrics per outcome, stores results in SQLite
+- **Web UI** - Self-contained HTML file using Chart.js for time-series visualization. No build step required
 
 ## Tech Stack
 
@@ -113,6 +119,11 @@ web-ui/dist/          Single-file web dashboard (HTML/CSS/JS)
 | Web UI | Vanilla JS + Chart.js |
 | Rate Limiting | `golang.org/x/time` |
 | License | LGPL-2.1 |
+
+## AI Policy
+- The backend is written and maintained by humans, and should remain that way. AI assistance is welcome, but every line of code must be fully understood and explainable by the developer.
+- The web UI was largely vibe-coded using AI assistance. The prompts used during development are available in the [`docs`](/docs) directory.
+Each prompt used should be added to the [docs](/docs) directory.
 
 ## License
 
