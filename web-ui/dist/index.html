@@ -511,7 +511,7 @@ body {
 @media(max-width:1000px) {
   .sidebar { width: 300px; min-width: 300px; }
   .sidebar-toggle { left: 299px; }
-  .outcome-row { grid-template-columns: 1fr; }
+  .outcome-row { flex-direction: column; }
 }
 @media(max-width:700px) {
   .sidebar {
@@ -912,16 +912,18 @@ body {
 
   async function loadAnalysis() {
     if (!S.market) return;
+    const reqId = S.market.MarketId;
     showSt('stLoading');
     try {
-      const d = await apiGet('/get-market-analysis?marketId=' + S.market.MarketId + '&days=' + S.days);
+      const d = await apiGet('/get-market-analysis?marketId=' + reqId + '&days=' + S.days);
+      if (S.market.MarketId !== reqId) return; // market changed during request
       if (!d || !d.length) {
-        S.activeCache[S.market.MarketId] = false;
+        S.activeCache[reqId] = false;
         showSt('stNoData'); return;
       }
       S.data = d;
-      S.activeCache[S.market.MarketId] = true;
-      S.spreadCache[S.market.MarketId] = calcSpread(d[d.length - 1]);
+      S.activeCache[reqId] = true;
+      S.spreadCache[reqId] = calcSpread(d[d.length - 1]);
       renderList();
       // Reset outcome filter if it doesn't exist in this market
       if (S.outcome !== 'all') {
@@ -935,6 +937,8 @@ body {
       renderOutcomeBar();
       renderChart();
     } catch (e) {
+      if (S.market.MarketId !== reqId) return; // market changed during request
+      S.activeCache[reqId] = false;
       document.getElementById('errH').textContent = 'Failed to Load Data';
       document.getElementById('errP').textContent = e.message || 'Unknown error';
       showSt('stError');
@@ -975,16 +979,16 @@ body {
         <div class="o-main-metrics">
           <div class="o-metric-block">
             <div class="o-metric-label pred">Prediction</div>
-            <div class="o-pred-val">${pct(o.PredictionRate, 1)}<span>%</span></div>
+            <div class="o-pred-val">${pctHtml(o.PredictionRate, 1)}</div>
           </div>
           <div class="o-metric-block">
             <div class="o-metric-label price">Price</div>
-            <div class="o-price-val">${pct(o.Price, 1)}<span>%</span></div>
+            <div class="o-price-val">${pctHtml(o.Price, 1)}</div>
           </div>
         </div>
         <div class="o-metrics">
-          <div class="o-m"><div class="o-m-label">Profit Rate</div><div class="o-m-val" style="color:var(--color-ProfitRate)">${pct(o.ProfitRate, 2)}%</div></div>
-          <div class="o-m"><div class="o-m-label">Wtd Profit</div><div class="o-m-val" style="color:var(--color-WeightedProfitRate)">${pct(o.WeightedProfitRate, 1)}%</div></div>
+          <div class="o-m"><div class="o-m-label">Profit Rate</div><div class="o-m-val" style="color:var(--color-ProfitRate)">${pctSuffix(o.ProfitRate, 2)}</div></div>
+          <div class="o-m"><div class="o-m-label">Wtd Profit</div><div class="o-m-val" style="color:var(--color-WeightedProfitRate)">${pctSuffix(o.WeightedProfitRate, 1)}</div></div>
           <div class="o-m"><div class="o-m-label">Total Profit</div><div class="o-m-val" style="color:var(--color-TotalProfit)">${compact(o.TotalProfit)}</div></div>
         </div>
       `;
@@ -1003,14 +1007,16 @@ body {
     for (let i = 0; i < outcomes.length; i++) {
       for (let j = i + 1; j < outcomes.length; j++) {
         const a = outcomes[i], b = outcomes[j];
-        const absDiff = Math.abs(a.PredictionRate - b.PredictionRate);
+        const aRate = a.PredictionRate, bRate = b.PredictionRate;
+        if (aRate == null || isNaN(aRate) || bRate == null || isNaN(bRate)) continue;
+        const absDiff = Math.abs(aRate - bRate);
         const colA = oColor(a.Outcome, i), colB = oColor(b.Outcome, j);
 
         let deltaHtml = '';
         if (prev && prev.Outcomes) {
           const pA = prev.Outcomes.find(x => x.Outcome === a.Outcome);
           const pB = prev.Outcomes.find(x => x.Outcome === b.Outcome);
-          if (pA && pB) {
+          if (pA && pB && pA.PredictionRate != null && pB.PredictionRate != null) {
             const prevDiff = Math.abs(pA.PredictionRate - pB.PredictionRate);
             const gapDelta = absDiff - prevDiff;
             if (Math.abs(gapDelta) > 0.0005) {
@@ -1038,6 +1044,14 @@ body {
     if (v == null || isNaN(v)) return '—';
     return (v * 100).toFixed(decimals);
   }
+  function pctSuffix(v, decimals) {
+    if (v == null || isNaN(v)) return '—';
+    return (v * 100).toFixed(decimals) + '%';
+  }
+  function pctHtml(v, decimals) {
+    if (v == null || isNaN(v)) return '—';
+    return (v * 100).toFixed(decimals) + '<span>%</span>';
+  }
 
   function fmtDelta(d) {
     if (d == null || isNaN(d)) return '—';
@@ -1047,8 +1061,9 @@ body {
 
   function compact(n) {
     if (n == null || isNaN(n)) return '—';
-    if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
-    if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+    const abs = Math.abs(n), sign = n < 0 ? '-' : '';
+    if (abs >= 1e6) return sign + (abs / 1e6).toFixed(2) + 'M';
+    if (abs >= 1e3) return sign + (abs / 1e3).toFixed(1) + 'K';
     return n.toFixed(2);
   }
 
