@@ -115,7 +115,7 @@ web-ui/dist/          Single-file web dashboard (HTML/CSS/JS)
 
 ## AI Policy
 - The backend is written and maintained by humans, and should remain that way. AI assistance is welcome, but every line of code must be fully understood and explainable by the developer.
-- The web UI was largely vibe-coded using AI assistance. The prompts used during development are available in the [`docs`](/docs) directory.
+- The web UI was largely vibe-coded using AI assistance. The prompts used during development are available in the [docs](/docs) directory.
 Each prompt used should be added to the [docs](/docs) directory.
 
 ## License
