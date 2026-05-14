@@ -1,6 +1,3 @@
-The UI was generated using AI.
-This is the prompt I used:
-
 I have made the backend for an application to analyze trends for polymarket bets.
 I want you to make the frontend for it as a plain HTML/Javascript/Css page. Only a single HTML page.
 
@@ -15,10 +12,14 @@ The list of tracked markets. With the question and picture of the market and oth
 In the main content area there will be:
 A chart for the selected market (selected using the sidebar)
 When a tracked market is selected I want to visualize all the analyses in a timechart related to this market.
+
+The X-axis should correspond to the time of the market analysis.
 I want to be able to select which trend I am visualizing, it should be possible to look at multiple trends at once.
+The selected trends should not reset when selecting other markets.
 The lookback time should also be configurable.
 I also want a card for each "outcome" at the top of the main content area, it should show the price, prediction rate, and other relevant information in a nice and easy to understand way.
 There should be a link to the market.
+The market analyses should be re-queryed every 10 minutes.
 
 If nothing is returned (NoContent response) when getting the market results, the UI should show some message such as "Loading, please come back later"
 

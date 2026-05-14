@@ -1,6 +1,3 @@
-The UI was generated using AI.
-This is the prompt I used:
-
 I have made the backend for an application to analyze trends for polymarket bets.
 I want you to make the frontend for it as a plain HTML/Javascript/Css page. Only a single HTML page.
 I want the frontend to be able to list market by question on a sidebar.
