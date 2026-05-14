@@ -224,6 +224,11 @@ body {
   outline: none; transition: var(--transition-fast);
 }
 .search-box:focus { border-color: var(--prediction); box-shadow: 0 0 0 2px var(--prediction-glow); }
+.active-filter {
+  display: flex; align-items: center; gap: 6px; margin-top: 8px;
+  font-size: 12px; color: var(--text-3); cursor: pointer; user-select: none;
+}
+.active-filter input { accent-color: var(--prediction); cursor: pointer; }
 
 /* Market list */
 .market-list { flex: 1; overflow-y: auto; padding: 8px 10px; }
@@ -365,13 +370,6 @@ body {
 }
 .o-price-label { font-size: 10.5px; color: var(--text-4); text-transform: uppercase; letter-spacing: .3px; }
 .o-price-value { font-size: 22px; font-weight: 700; color: var(--text-2); font-family: var(--font-mono); }
-.o-price-delta {
-  font-size: 11px; font-weight: 600; font-family: var(--font-mono);
-}
-.o-price-delta.pos { color: var(--green); }
-.o-price-delta.neg { color: var(--red); }
-.o-price-delta.zero { color: var(--text-4); }
-
 /* Secondary metrics grid */
 .o-metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 .o-m {
@@ -380,6 +378,34 @@ body {
 }
 .o-m-label { font-size: 9.5px; color: var(--text-4); text-transform: uppercase; letter-spacing: .3px; margin-bottom: 3px; }
 .o-m-val { font-size: 13px; font-weight: 600; font-family: var(--font-mono); }
+
+/* Prediction Rate comparison */
+.pred-comparison {
+  padding: 14px 24px 0;
+}
+.pred-comp-title {
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px;
+  color: var(--text-3); margin-bottom: 8px;
+}
+.pred-comp-rows {
+  display: flex; flex-direction: column; gap: 6px;
+}
+.pred-comp-row {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 10px 14px; background: var(--bg-2); border: 1px solid var(--border-0);
+  border-radius: var(--radius-md);
+}
+.pred-comp-pair { font-size: 13px; font-weight: 600; }
+.pred-comp-val {
+  font-size: 13px; font-weight: 700; font-family: var(--font-mono);
+  color: var(--text-0); margin-left: auto;
+}
+.pred-comp-delta {
+  font-size: 11px; font-weight: 600; font-family: var(--font-mono);
+  padding: 2px 8px; border-radius: var(--radius-pill);
+}
+.pred-comp-delta.pos { background: var(--green-dim); color: var(--green); }
+.pred-comp-delta.neg { background: var(--red-dim); color: var(--red); }
 
 /* ================================================================
    CHART SECTION
@@ -520,6 +546,10 @@ body {
     </div>
     <div class="sidebar-search">
       <input class="search-box" id="searchBox" type="text" placeholder="Filter markets…" />
+      <label class="active-filter" id="activeFilter">
+        <input type="checkbox" id="activeOnly" />
+        <span>Active only</span>
+      </label>
     </div>
     <div class="market-list" id="marketList"></div>
   </aside>
@@ -660,6 +690,8 @@ body {
     },
     outcome: 'all',      // outcome filter
     search: '',
+    activeOnly: false,
+    activeCache: {},     // marketId -> true/false/undefined (undefined = not checked yet)
     adding: false,
     fs: false,           // chart fullscreen
     refreshMs: 10 * 60 * 1000,
@@ -746,9 +778,28 @@ body {
   // Search
   searchBox.oninput = () => { S.search = searchBox.value.toLowerCase(); renderList(); };
 
+  // Active only filter
+  const activeOnlyCb = document.getElementById('activeOnly');
+  activeOnlyCb.onchange = () => { S.activeOnly = activeOnlyCb.checked; renderList(); };
+
   // Load markets
   async function loadMarkets() {
     try { S.markets = (await apiGet('/tracked')) || []; } catch { S.markets = []; }
+    renderList();
+    probeActivity();
+  }
+
+  // Probe each market's activity by fetching 1-day analysis
+  async function probeActivity() {
+    await Promise.all(S.markets.map(async m => {
+      if (S.activeCache[m.MarketId] !== undefined) return;
+      try {
+        const d = await apiGet('/get-market-analysis?marketId=' + m.MarketId + '&days=1');
+        S.activeCache[m.MarketId] = !!(d && d.length);
+      } catch {
+        S.activeCache[m.MarketId] = false;
+      }
+    }));
     renderList();
   }
 
@@ -760,6 +811,7 @@ body {
       m.Slug.toLowerCase().includes(S.search) ||
       m.MarketId.includes(S.search)
     );
+    if (S.activeOnly) list = list.filter(m => S.activeCache[m.MarketId] === true);
 
     listEl.innerHTML = '';
 
@@ -840,8 +892,12 @@ body {
     showSt('stLoading');
     try {
       const d = await apiGet('/get-market-analysis?marketId=' + S.market.MarketId + '&days=' + S.days);
-      if (!d || !d.length) { showSt('stNoData'); return; }
+      if (!d || !d.length) {
+        S.activeCache[S.market.MarketId] = false;
+        showSt('stNoData'); return;
+      }
       S.data = d;
+      S.activeCache[S.market.MarketId] = true;
       showSt('dashContent');
       renderOutcomeCards();
       renderMetricBar();
@@ -862,6 +918,9 @@ body {
 
   function renderOutcomeCards() {
     outcomeRowEl.innerHTML = '';
+    // Remove previous comparison element if it exists
+    const oldComp = document.querySelector('.pred-comparison');
+    if (oldComp) oldComp.remove();
     if (!S.data.length) return;
 
     const latest = S.data[S.data.length - 1];
@@ -871,17 +930,10 @@ body {
       const col = oColor(o.Outcome, idx);
       const pO = prev ? prev.Outcomes.find(x => x.Outcome === o.Outcome) : null;
 
-      // Deltas between last two data points
+      // PredictionRate delta between last two data points
       const predDelta = pO ? o.PredictionRate - pO.PredictionRate : 0;
-      const priceDelta = pO ? o.Price - pO.Price : 0;
-
-      // PredictionRate delta pill (shown in header)
       const predClass = predDelta > 0.001 ? 'pos' : predDelta < -0.001 ? 'neg' : 'zero';
       const predText = fmtDelta(predDelta);
-
-      // Price delta
-      const priceClass = priceDelta > 0.001 ? 'pos' : priceDelta < -0.001 ? 'neg' : 'zero';
-      const priceText = fmtDelta(priceDelta);
 
       const card = document.createElement('div');
       card.className = 'o-card';
@@ -897,7 +949,6 @@ body {
         <div class="o-price-row">
           <span class="o-price-label">Price</span>
           <span class="o-price-value">${(o.Price * 100).toFixed(1)}%</span>
-          <span class="o-price-delta ${priceClass}">${priceText}</span>
         </div>
         <div class="o-metrics">
           <div class="o-m"><div class="o-m-label">Profit Rate</div><div class="o-m-val" style="color:var(--color-ProfitRate)">${(o.ProfitRate * 100).toFixed(2)}%</div></div>
@@ -908,6 +959,57 @@ body {
 
       outcomeRowEl.appendChild(card);
     });
+
+    // Prediction Rate comparison between outcomes
+    if (latest.Outcomes.length >= 2) {
+      renderPredictionComparison(latest, prev);
+    }
+  }
+
+  function renderPredictionComparison(latest, prev) {
+    const container = document.createElement('div');
+    container.className = 'pred-comparison';
+
+    let html = '<div class="pred-comp-title">Prediction Rate Comparison</div><div class="pred-comp-rows">';
+
+    // Show pairwise differences between outcomes
+    const outcomes = latest.Outcomes;
+    for (let i = 0; i < outcomes.length; i++) {
+      for (let j = i + 1; j < outcomes.length; j++) {
+        const a = outcomes[i], b = outcomes[j];
+        const diff = a.PredictionRate - b.PredictionRate;
+        const absDiff = Math.abs(diff);
+        const leader = diff > 0 ? a.Outcome : b.Outcome;
+        const colA = oColor(a.Outcome, i), colB = oColor(b.Outcome, j);
+
+        // Previous diff for delta
+        let deltaHtml = '';
+        if (prev) {
+          const pA = prev.Outcomes.find(x => x.Outcome === a.Outcome);
+          const pB = prev.Outcomes.find(x => x.Outcome === b.Outcome);
+          if (pA && pB) {
+            const prevDiff = Math.abs(pA.PredictionRate - pB.PredictionRate);
+            const gapDelta = absDiff - prevDiff;
+            if (Math.abs(gapDelta) > 0.0005) {
+              const cls = gapDelta > 0 ? 'pos' : 'neg';
+              deltaHtml = `<span class="pred-comp-delta ${cls}">${gapDelta > 0 ? 'widening' : 'narrowing'} ${fmtDelta(gapDelta)}</span>`;
+            }
+          }
+        }
+
+        html += `
+          <div class="pred-comp-row">
+            <span class="pred-comp-pair"><span style="color:${colA}">${esc(a.Outcome)}</span> <span style="color:var(--text-4)">vs</span> <span style="color:${colB}">${esc(b.Outcome)}</span></span>
+            <span class="pred-comp-val">${(absDiff * 100).toFixed(1)}% <span style="color:var(--text-3);font-weight:400">spread</span></span>
+            ${deltaHtml}
+          </div>
+        `;
+      }
+    }
+
+    html += '</div>';
+    container.innerHTML = html;
+    outcomeRowEl.parentNode.insertBefore(container, outcomeRowEl.nextSibling);
   }
 
   function fmtDelta(d) {
