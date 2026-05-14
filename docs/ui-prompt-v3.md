@@ -11,19 +11,19 @@ The application should have two major sections:
 1. A collapsible left sidebar containing tracked markets
 2. A main analytics dashboard area for the selected market
 
-The design should feel inspired by modern financial dashboards, prediction markets, and crypto trading interfaces.
+The design should feel inspired by modern financial dashboards and prediction market platforms.
 
 Use:
 
 * dark mode by default
-* glassmorphism or subtle card-based styling
+* modern card-based styling
 * smooth hover states and transitions
 * rounded corners
 * soft shadows
 * clean spacing
 * responsive layout
 * modern fonts
-* color-coded metrics
+* strong visual hierarchy
 * animated chart transitions where possible
 
 Avoid making it look like a generic admin dashboard.
@@ -66,37 +66,25 @@ Each market item should display:
 
 * market image thumbnail
 * market question
-* short slug or market ID
-* current trend sentiment indicator
-* mini sparkline preview if possible
-* last updated timestamp
-* active/selected state styling
-
-The market cards should feel interactive and premium.
+* market slug or market ID
+* last updated timestamp if available
+* active/selected styling
 
 The selected market should:
 
 * remain highlighted
-* animate subtly
-* update the main content area
+* update the main content area immediately
 
 Add:
 
 * search/filter box for tracked markets
-* ability to sort by:
-
-  * newest
-  * most active
-  * highest prediction divergence
-  * alphabetical
-
-Sidebar should support scrolling independently from the main area.
+* independent sidebar scrolling
 
 ---
 
 # Main Dashboard Area
 
-The main content area should become a rich analytics dashboard for the selected market.
+The main content area should become a clean analytics dashboard for the selected market.
 
 At the top:
 
@@ -124,7 +112,22 @@ GET /get-market-analysis?marketId=665374&days=7
 
 At the top of the dashboard, show one card per outcome (“Yes”, “No”, etc).
 
-These cards should look visually rich and easy to scan.
+Each outcome should always have its own clearly identifiable color that is reused consistently across:
+
+* cards
+* chart lines
+* chart legends
+* sparklines
+* badges
+* hover states
+
+For example:
+
+* Yes = green
+* No = red
+* Additional outcomes = blue, purple, orange, etc.
+
+The colors should remain stable across refreshes and market switches.
 
 Each outcome card should display:
 
@@ -134,24 +137,60 @@ Each outcome card should display:
 * Weighted prediction rate
 * Profit rate
 * Total profit
-* Confidence indicator
-* Momentum/trend direction
-* Delta since previous analysis
-* Mini trend sparkline
+* Change since previous analysis
+* Mini sparkline trend
 
 Use:
 
-* green/red coloring
-* arrows for trend movement
-* subtle glow effects for strong trends
-* badges like:
+* arrows for increases/decreases
+* subtle animations when values update
+* color-coded positive/negative changes
+* compact readable formatting
 
-  * “Bullish”
-  * “Bearish”
-  * “High Confidence”
-  * “Unusual Activity”
+Avoid fake or overly complex AI-style metrics that are not mathematically meaningful.
 
-Cards should animate smoothly when values update.
+Do NOT invent:
+
+* confidence scores
+* bullishness indexes
+* reversal signals
+* AI confidence meters
+* volatility intelligence
+* sentiment engines
+* unexplained indicators
+
+Only calculate and display metrics directly derived from the actual data.
+
+---
+
+# Prediction Spread Visualization
+
+One important derived metric should be the “Prediction Spread”.
+
+This is the difference between:
+
+* PredictionRate
+  and
+* actual market Price
+
+Example:
+
+PredictionSpread = PredictionRate - Price
+
+This should be visualized clearly because it represents disagreement between:
+
+* market pricing
+  and
+* prediction analysis
+
+The UI should:
+
+* color-code spreads
+* highlight large spreads
+* show positive vs negative spread
+* optionally sort outcomes by largest spread
+
+This is one of the most important visual indicators in the application.
 
 ---
 
@@ -169,6 +208,7 @@ Metrics include:
 
 * Price
 * PredictionRate
+* PredictionSpread
 * WeightedProfitRate
 * ProfitRate
 * TotalProfit
@@ -177,83 +217,63 @@ Requirements:
 
 * multiple selectable metrics
 * selections persist when switching markets
-* each metric has its own color/style
+* each metric has its own line style
+* each outcome has its own color
 * zooming and panning
 * hover tooltips
 * legend with toggles
-* smooth interpolation
 * responsive resizing
 * time range filtering
 * fullscreen chart mode
 
-Use different visualization styles:
+Visualization rules:
 
-* line charts
-* area charts
-* dashed lines
-* gradient fills
+* Different outcomes MUST use different colors
+* The same outcome color must remain consistent everywhere
+* Different metrics for the same outcome can use:
+
+  * dashed lines
+  * opacity differences
+  * glow effects
+  * thinner/thicker strokes
 
 Example:
 
-* price = solid line
-* prediction rate = glowing line
-* total profit = semi-transparent area chart
+* “Yes” outcome = green
 
-Make the chart visually impressive and easy to interpret quickly.
+  * Price = solid green
+  * PredictionRate = dashed green
+  * PredictionSpread = glowing green area
+
+This makes charts easy to read even with many visible series.
 
 ---
 
-# Advanced Analytics Ideas
+# Visual Design Goals
 
-Add extra visual intelligence and creativity.
+The charts should be:
 
-Ideas to implement:
+* visually impressive
+* easy to read
+* uncluttered
+* optimized for fast interpretation
 
-## Trend Strength Meter
+Prioritize:
 
-A gauge or progress bar showing:
+* readability
+* trend clarity
+* color consistency
+* smooth interactions
+* meaningful data only
 
-* bullishness
-* bearishness
-* uncertainty
+Avoid:
 
-## Sentiment Divergence Indicator
+* fake analytics
+* unexplained indicators
+* noisy visual clutter
+* unnecessary widgets
 
-Highlight when:
-
-* market price differs significantly from prediction rate
-* weighted profit trends diverge from actual price
-
-## Signal Badges
-
-Detect and show:
-
-* rapid momentum changes
-* unusual volatility
-* high confidence opportunities
-* reversal signals
-
-## Volatility Visualization
-
-Show:
-
-* confidence bands
-* moving averages
-* rolling variance
-
-## Timeline Event Markers
-
-Allow future support for:
-
-* news events
-* large market movements
-* spikes in prediction changes
-
-## Heatmap Mode
-
-Optional alternate visualization mode where:
-
-* outcomes and metrics become a color heatmap over time
+The application should feel like a serious analytics tool used by traders.
 
 ---
 
@@ -274,7 +294,7 @@ show a friendly empty state such as:
 
 Include:
 
-* animated placeholder chart
+* placeholder chart
 * subtle loading animation
 
 ## Error Handling
@@ -311,11 +331,10 @@ The UI should:
 * Single HTML file only
 * Plain HTML/CSS/JavaScript
 * No React/Vue/build tools
-* Use Chart.js, ECharts, or lightweight chart libraries if needed via CDN
+* Use Chart.js or ECharts via CDN if needed
 * Keep code modular and clean
 * Use CSS variables for theming
 * Responsive on desktop and tablets
-* Avoid giant monolithic functions
 * Use async/await
 * Include comments explaining architecture
 
@@ -323,13 +342,12 @@ The UI should:
 
 # Desired Visual Style
 
-The UI should feel like a mix between:
+The UI should feel inspired by:
 
 * Polymarket
 * TradingView
 * modern crypto dashboards
-* Bloomberg Terminal (but cleaner)
-* prediction market analytics platform
+* prediction market analytics tools
 
 The interface should prioritize:
 
@@ -339,7 +357,7 @@ The interface should prioritize:
 * visual polish
 * smooth interactions
 
-The result should feel like a serious analytics product used by traders and researchers, not a demo project.
+The result should feel like a real trading analytics product, not a demo dashboard.
 
 ---
 
