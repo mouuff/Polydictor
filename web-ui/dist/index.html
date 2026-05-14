@@ -247,7 +247,6 @@ body {
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .mkt-id { font-size: 10.5px; color: var(--text-4); font-family: var(--font-mono); }
-.mkt-spark { width: 50px; height: 24px; flex-shrink: 0; align-self: center; }
 
 /* Skeleton */
 .skel { border-radius: var(--radius-sm); background: linear-gradient(90deg, var(--bg-3) 25%, rgba(255,255,255,.03) 50%, var(--bg-3) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
@@ -360,30 +359,27 @@ body {
   color: var(--text-0); margin-bottom: 2px;
 }
 
-/* Sub row: Price + delta from prediction */
+/* Price row */
 .o-price-row {
   display: flex; align-items: baseline; gap: 10px; margin-bottom: 16px;
 }
-.o-price-label { font-size: 10.5px; color: var(--text-4); }
-.o-price-value { font-size: 16px; font-weight: 600; color: var(--text-2); font-family: var(--font-mono); }
-.o-divergence {
+.o-price-label { font-size: 10.5px; color: var(--text-4); text-transform: uppercase; letter-spacing: .3px; }
+.o-price-value { font-size: 22px; font-weight: 700; color: var(--text-2); font-family: var(--font-mono); }
+.o-price-delta {
   font-size: 11px; font-weight: 600; font-family: var(--font-mono);
 }
-.o-divergence.up { color: var(--green); }
-.o-divergence.down { color: var(--red); }
-.o-divergence.flat { color: var(--text-4); }
+.o-price-delta.pos { color: var(--green); }
+.o-price-delta.neg { color: var(--red); }
+.o-price-delta.zero { color: var(--text-4); }
 
 /* Secondary metrics grid */
-.o-metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.o-metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 .o-m {
   padding: 8px 10px; background: var(--bg-0); border-radius: var(--radius-sm);
   border: 1px solid var(--border-0);
 }
 .o-m-label { font-size: 9.5px; color: var(--text-4); text-transform: uppercase; letter-spacing: .3px; margin-bottom: 3px; }
 .o-m-val { font-size: 13px; font-weight: 600; font-family: var(--font-mono); }
-
-/* Sparkline in card */
-.o-spark { width: 100%; height: 32px; }
 
 /* ================================================================
    CHART SECTION
@@ -670,7 +666,6 @@ body {
     cdSec: 600,
     _refreshT: null,
     _cdT: null,
-    sparkCache: {},      // marketId -> analysis snippet
   };
 
   // Metric display config — order matters (PredictionRate first)
@@ -755,7 +750,6 @@ body {
   async function loadMarkets() {
     try { S.markets = (await apiGet('/tracked')) || []; } catch { S.markets = []; }
     renderList();
-    prefetchSparks();
   }
 
   // Render list
@@ -795,68 +789,14 @@ body {
           <div class="mkt-q">${esc(m.Question)}</div>
           <div class="mkt-id">#${esc(m.MarketId)}</div>
         </div>
-        <canvas class="mkt-spark" id="sp-${m.MarketId}"></canvas>
       `;
       card.onclick = () => selectMarket(m);
       listEl.appendChild(card);
-      drawSpark(m.MarketId);
     });
   }
 
   function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
 
-  // Sparklines from cached data
-  function drawSpark(id) {
-    const c = document.getElementById('sp-' + id);
-    if (!c) return;
-    const arr = S.sparkCache[id];
-    const ctx = c.getContext('2d');
-    c.width = 50 * 2; c.height = 24 * 2; ctx.scale(2, 2);
-
-    if (!arr || arr.length < 2) {
-      ctx.strokeStyle = 'rgba(148,163,184,.15)';
-      ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(4, 12); ctx.lineTo(46, 12); ctx.stroke();
-      return;
-    }
-
-    // Use PredictionRate for the sparkline (hero metric)
-    const vals = arr.map(d => {
-      const o = d.Outcomes.find(x => x.Outcome === 'Yes') || d.Outcomes[0];
-      return o ? o.PredictionRate : null;
-    }).filter(v => v !== null);
-    if (vals.length < 2) return;
-
-    const mn = Math.min(...vals), mx = Math.max(...vals), rng = mx - mn || .01;
-    const up = vals[vals.length - 1] >= vals[0];
-    const col = up ? '#34d399' : '#f87171';
-
-    ctx.strokeStyle = col; ctx.lineWidth = 1.3; ctx.lineJoin = 'round';
-    ctx.beginPath();
-    vals.forEach((v, i) => {
-      const x = 3 + (i / (vals.length - 1)) * 44;
-      const y = 2 + 20 - ((v - mn) / rng) * 20;
-      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
-    });
-    ctx.stroke();
-
-    // Gradient fill
-    ctx.lineTo(47, 22); ctx.lineTo(3, 22); ctx.closePath();
-    const g = ctx.createLinearGradient(0, 0, 0, 24);
-    g.addColorStop(0, up ? 'rgba(52,211,153,.18)' : 'rgba(248,113,113,.18)');
-    g.addColorStop(1, 'transparent');
-    ctx.fillStyle = g; ctx.fill();
-  }
-
-  async function prefetchSparks() {
-    await Promise.all(S.markets.map(async m => {
-      try {
-        const d = await apiGet('/get-market-analysis?marketId=' + m.MarketId + '&days=3');
-        if (d && d.length) S.sparkCache[m.MarketId] = d;
-      } catch {}
-    }));
-    renderList();
-  }
 
   // ============================================================
   // 5. SELECT MARKET & TOPBAR
@@ -902,7 +842,6 @@ body {
       const d = await apiGet('/get-market-analysis?marketId=' + S.market.MarketId + '&days=' + S.days);
       if (!d || !d.length) { showSt('stNoData'); return; }
       S.data = d;
-      S.sparkCache[S.market.MarketId] = d;
       showSt('dashContent');
       renderOutcomeCards();
       renderMetricBar();
@@ -932,23 +871,17 @@ body {
       const col = oColor(o.Outcome, idx);
       const pO = prev ? prev.Outcomes.find(x => x.Outcome === o.Outcome) : null;
 
-      // PredictionRate delta
+      // Deltas between last two data points
       const predDelta = pO ? o.PredictionRate - pO.PredictionRate : 0;
+      const priceDelta = pO ? o.Price - pO.Price : 0;
 
-      // Divergence: prediction vs price
-      const div = o.PredictionRate - o.Price;
-      const divAbs = Math.abs(div);
-      const divLabel = div > 0.001 ? '+' + (div * 100).toFixed(1) + '%' : div < -0.001 ? (div * 100).toFixed(1) + '%' : '0.0%';
-      const divClass = div > 0.005 ? 'up' : div < -0.005 ? 'down' : 'flat';
+      // PredictionRate delta pill (shown in header)
+      const predClass = predDelta > 0.001 ? 'pos' : predDelta < -0.001 ? 'neg' : 'zero';
+      const predText = fmtDelta(predDelta);
 
-      // Trend from recent data
-      const prices = S.data.map(e => e.Outcomes.find(x => x.Outcome === o.Outcome)?.PredictionRate || 0);
-      const sparkData = S.data.map(e => e.Outcomes.find(x => x.Outcome === o.Outcome)?.PredictionRate).filter(Boolean);
-
-      // Delta pill
-      const deltaVal = predDelta;
-      const deltaClass = deltaVal > 0.001 ? 'pos' : deltaVal < -0.001 ? 'neg' : 'zero';
-      const deltaText = deltaVal > 0 ? '+' + (deltaVal * 100).toFixed(2) + '%' : (deltaVal * 100).toFixed(2) + '%';
+      // Price delta
+      const priceClass = priceDelta > 0.001 ? 'pos' : priceDelta < -0.001 ? 'neg' : 'zero';
+      const priceText = fmtDelta(priceDelta);
 
       const card = document.createElement('div');
       card.className = 'o-card';
@@ -957,57 +890,29 @@ body {
       card.innerHTML = `
         <div class="o-header">
           <div class="o-name" style="color:${col}">${esc(o.Outcome)}</div>
-          <div class="o-delta ${deltaClass}">${deltaText}</div>
+          <div class="o-delta ${predClass}">${predText}</div>
         </div>
         <div class="o-prediction-label">Prediction Rate</div>
         <div class="o-prediction-value">${(o.PredictionRate * 100).toFixed(1)}<span style="font-size:16px;opacity:.5">%</span></div>
         <div class="o-price-row">
           <span class="o-price-label">Price</span>
-          <span class="o-price-value">${(o.Price * 100).toFixed(1)}¢</span>
-          <span class="o-divergence ${divClass}" title="PredictionRate − Price">${divLabel} div</span>
+          <span class="o-price-value">${(o.Price * 100).toFixed(1)}%</span>
+          <span class="o-price-delta ${priceClass}">${priceText}</span>
         </div>
         <div class="o-metrics">
           <div class="o-m"><div class="o-m-label">Profit Rate</div><div class="o-m-val" style="color:var(--color-ProfitRate)">${(o.ProfitRate * 100).toFixed(2)}%</div></div>
           <div class="o-m"><div class="o-m-label">Wtd Profit</div><div class="o-m-val" style="color:var(--color-WeightedProfitRate)">${(o.WeightedProfitRate * 100).toFixed(1)}%</div></div>
           <div class="o-m"><div class="o-m-label">Total Profit</div><div class="o-m-val" style="color:var(--color-TotalProfit)">${compact(o.TotalProfit)}</div></div>
         </div>
-        <canvas class="o-spark" id="osp-${idx}"></canvas>
       `;
 
       outcomeRowEl.appendChild(card);
-
-      // Draw card sparkline (PredictionRate)
-      requestAnimationFrame(() => drawCardSpark('osp-' + idx, sparkData, col));
     });
   }
 
-  function drawCardSpark(id, data, col) {
-    const c = document.getElementById(id);
-    if (!c || data.length < 2) return;
-    const ctx = c.getContext('2d');
-    const r = c.getBoundingClientRect();
-    c.width = r.width * 2; c.height = r.height * 2;
-    ctx.scale(2, 2);
-    const w = r.width, h = r.height, p = 2;
-    const mn = Math.min(...data), mx = Math.max(...data), rng = mx - mn || .01;
-
-    ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.lineJoin = 'round';
-    ctx.beginPath();
-    data.forEach((v, i) => {
-      const x = p + (i / (data.length - 1)) * (w - p * 2);
-      const y = p + (h - p * 2) - ((v - mn) / rng) * (h - p * 2);
-      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
-    });
-    ctx.stroke();
-
-    // Fill
-    ctx.lineTo(p + (w - p * 2), h - p);
-    ctx.lineTo(p, h - p);
-    ctx.closePath();
-    const g = ctx.createLinearGradient(0, 0, 0, h);
-    g.addColorStop(0, col + '25');
-    g.addColorStop(1, 'transparent');
-    ctx.fillStyle = g; ctx.fill();
+  function fmtDelta(d) {
+    const s = d > 0 ? '+' : '';
+    return s + (d * 100).toFixed(2) + '%';
   }
 
   function compact(n) {
