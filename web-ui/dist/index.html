@@ -549,6 +549,7 @@ body {
     <div class="sidebar-search">
       <input class="search-box" id="searchBox" type="text" placeholder="Filter markets…" />
       <button class="active-toggle" id="activeOnly">Active only</button>
+      <button class="active-toggle" id="sortSpread">Sort by spread</button>
     </div>
     <div class="market-list" id="marketList"></div>
   </aside>
@@ -691,6 +692,8 @@ body {
     search: '',
     activeOnly: false,
     activeCache: {},     // marketId -> true/false/undefined (undefined = not checked yet)
+    spreadCache: {},    // marketId -> spread value (max prediction rate diff between outcomes)
+    sortSpread: false,
     adding: false,
     fs: false,           // chart fullscreen
     refreshMs: 10 * 60 * 1000,
@@ -785,6 +788,14 @@ body {
     renderList();
   };
 
+  // Sort by spread
+  const sortSpreadBtn = document.getElementById('sortSpread');
+  sortSpreadBtn.onclick = () => {
+    S.sortSpread = !S.sortSpread;
+    sortSpreadBtn.classList.toggle('on', S.sortSpread);
+    renderList();
+  };
+
   // Load markets
   async function loadMarkets() {
     try { S.markets = (await apiGet('/tracked')) || []; } catch { S.markets = []; }
@@ -792,13 +803,20 @@ body {
     probeActivity();
   }
 
-  // Probe each market's activity sequentially to avoid overwhelming the backend
+  function calcSpread(entry) {
+    if (!entry || !entry.Outcomes || entry.Outcomes.length < 2) return 0;
+    const rates = entry.Outcomes.map(o => o.PredictionRate || 0);
+    return Math.max(...rates) - Math.min(...rates);
+  }
+
   async function probeActivity() {
     for (const m of S.markets) {
       if (S.activeCache[m.MarketId] !== undefined) continue;
       try {
         const d = await apiGet('/get-market-analysis?marketId=' + m.MarketId + '&days=1');
-        S.activeCache[m.MarketId] = !!(d && d.length);
+        const active = !!(d && d.length);
+        S.activeCache[m.MarketId] = active;
+        if (active) S.spreadCache[m.MarketId] = calcSpread(d[d.length - 1]);
       } catch {
         S.activeCache[m.MarketId] = false;
       }
@@ -815,6 +833,7 @@ body {
       m.MarketId.includes(S.search)
     );
     if (S.activeOnly) list = list.filter(m => S.activeCache[m.MarketId] === true);
+    if (S.sortSpread) list.sort((a, b) => (S.spreadCache[b.MarketId] || 0) - (S.spreadCache[a.MarketId] || 0));
 
     listEl.innerHTML = '';
 
@@ -836,13 +855,14 @@ body {
 
     list.forEach(m => {
       const active = S.market && S.market.MarketId === m.MarketId;
+      const spread = S.spreadCache[m.MarketId];
       const card = document.createElement('div');
       card.className = 'mkt-card' + (active ? ' active' : '');
       card.innerHTML = `
         <img class="mkt-img" src="${esc(m.Image)}" alt="" loading="lazy" onerror="this.style.display='none'" />
         <div class="mkt-body">
           <div class="mkt-q">${esc(m.Question)}</div>
-          <div class="mkt-id">#${esc(m.MarketId)}</div>
+          <div class="mkt-id">#${esc(m.MarketId)}${spread != null ? ' · <span style="color:var(--prediction);font-weight:600">spread ' + pct(spread, 1) + '%</span>' : ''}</div>
         </div>
       `;
       card.onclick = () => selectMarket(m);
@@ -901,6 +921,8 @@ body {
       }
       S.data = d;
       S.activeCache[S.market.MarketId] = true;
+      S.spreadCache[S.market.MarketId] = calcSpread(d[d.length - 1]);
+      renderList();
       // Reset outcome filter if it doesn't exist in this market
       if (S.outcome !== 'all') {
         const available = new Set();
