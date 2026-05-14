@@ -349,13 +349,6 @@ body {
 
 .o-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
 .o-name { font-size: 13px; font-weight: 700; }
-.o-delta {
-  font-size: 10px; font-weight: 600; padding: 2px 7px;
-  border-radius: var(--radius-pill); font-family: var(--font-mono);
-}
-.o-delta.pos { background: var(--green-dim); color: var(--green); }
-.o-delta.neg { background: var(--red-dim); color: var(--red); }
-.o-delta.zero { background: rgba(148,163,184,.1); color: var(--text-3); }
 
 /* Two-column: Prediction + Price side by side */
 .o-main-metrics {
@@ -940,11 +933,6 @@ body {
 
     latest.Outcomes.forEach((o, idx) => {
       const col = oColor(o.Outcome, idx);
-      const pO = prev ? prev.Outcomes.find(x => x.Outcome === o.Outcome) : null;
-
-      const predDelta = pO ? o.PredictionRate - pO.PredictionRate : 0;
-      const predClass = predDelta > 0.001 ? 'pos' : predDelta < -0.001 ? 'neg' : 'zero';
-      const predText = fmtDelta(predDelta);
 
       const card = document.createElement('div');
       card.className = 'o-card';
@@ -953,7 +941,6 @@ body {
       card.innerHTML = `
         <div class="o-header">
           <div class="o-name" style="color:${col}">${esc(o.Outcome)}</div>
-          <div class="o-delta ${predClass}">${predText}</div>
         </div>
         <div class="o-main-metrics">
           <div class="o-metric-block">
