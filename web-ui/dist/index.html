@@ -367,7 +367,7 @@ body {
   margin-bottom: 2px;
 }
 .o-metric-label.pred { color: var(--prediction); }
-.o-metric-label.price { color: var(--text-4); }
+.o-metric-label.price { color: var(--text-2); }
 .o-pred-val {
   font-size: 26px; font-weight: 800; letter-spacing: -.5px; line-height: 1;
   color: var(--text-0);
@@ -375,7 +375,7 @@ body {
 .o-pred-val span { font-size: 14px; opacity: .5; }
 .o-price-val {
   font-size: 20px; font-weight: 700; letter-spacing: -.3px; line-height: 1;
-  color: var(--text-1); font-family: var(--font-mono);
+  color: var(--text-0); font-family: var(--font-mono);
 }
 .o-price-val span { font-size: 12px; opacity: .5; }
 
@@ -385,29 +385,36 @@ body {
   border-top: 1px solid var(--border-0);
 }
 .o-m { display: flex; flex-direction: column; }
-.o-m-label { font-size: 9px; color: var(--text-4); text-transform: uppercase; letter-spacing: .3px; margin-bottom: 1px; }
+.o-m-label { font-size: 9px; color: var(--text-2); text-transform: uppercase; letter-spacing: .3px; margin-bottom: 1px; }
 .o-m-val { font-size: 11.5px; font-weight: 600; font-family: var(--font-mono); }
 
-/* Prediction Rate comparison — compact inline bar */
-.pred-comparison {
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  padding: 10px 24px 0;
+/* Prediction Rate spread card (sits in outcome-row) */
+.spread-card {
+  flex: 1; min-width: 180px;
+  background: var(--bg-2); border: 1px solid var(--border-0);
+  border-radius: var(--radius-lg); padding: 14px 16px;
+  display: flex; flex-direction: column;
 }
-.pred-comp-item {
-  display: flex; align-items: center; gap: 8px;
-  padding: 6px 12px; background: var(--bg-2); border: 1px solid var(--border-0);
-  border-radius: var(--radius-md); font-size: 12px;
+.spread-card-title {
+  font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px;
+  color: var(--text-2); margin-bottom: 10px;
 }
-.pred-comp-pair { font-weight: 600; }
-.pred-comp-val {
-  font-weight: 700; font-family: var(--font-mono); color: var(--text-0);
+.spread-row {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
 }
-.pred-comp-delta {
+.spread-row:last-child { margin-bottom: 0; }
+.spread-pair { font-size: 12px; font-weight: 600; }
+.spread-val {
+  font-size: 20px; font-weight: 800; font-family: var(--font-mono);
+  color: var(--text-0); letter-spacing: -.3px; margin-left: auto;
+}
+.spread-val span { font-size: 12px; opacity: .5; }
+.spread-delta {
   font-size: 10px; font-weight: 600; font-family: var(--font-mono);
-  padding: 1px 6px; border-radius: var(--radius-pill);
+  padding: 2px 7px; border-radius: var(--radius-pill);
 }
-.pred-comp-delta.pos { background: var(--green-dim); color: var(--green); }
-.pred-comp-delta.neg { background: var(--red-dim); color: var(--red); }
+.spread-delta.pos { background: var(--green-dim); color: var(--green); }
+.spread-delta.neg { background: var(--red-dim); color: var(--red); }
 
 /* ================================================================
    CHART SECTION
@@ -921,19 +928,20 @@ body {
 
   function renderOutcomeCards() {
     outcomeRowEl.innerHTML = '';
-    // Remove previous comparison element if it exists
-    const oldComp = document.querySelector('.pred-comparison');
-    if (oldComp) oldComp.remove();
     if (!S.data.length) return;
 
     const latest = S.data[S.data.length - 1];
     const prev = S.data.length >= 2 ? S.data[S.data.length - 2] : null;
 
+    // Spread card first (if 2+ outcomes)
+    if (latest.Outcomes.length >= 2) {
+      outcomeRowEl.appendChild(buildSpreadCard(latest, prev));
+    }
+
     latest.Outcomes.forEach((o, idx) => {
       const col = oColor(o.Outcome, idx);
       const pO = prev ? prev.Outcomes.find(x => x.Outcome === o.Outcome) : null;
 
-      // PredictionRate delta between last two data points
       const predDelta = pO ? o.PredictionRate - pO.PredictionRate : 0;
       const predClass = predDelta > 0.001 ? 'pos' : predDelta < -0.001 ? 'neg' : 'zero';
       const predText = fmtDelta(predDelta);
@@ -966,16 +974,13 @@ body {
 
       outcomeRowEl.appendChild(card);
     });
-
-    // Prediction Rate comparison between outcomes
-    if (latest.Outcomes.length >= 2) {
-      renderPredictionComparison(latest, prev);
-    }
   }
 
-  function renderPredictionComparison(latest, prev) {
-    const container = document.createElement('div');
-    container.className = 'pred-comparison';
+  function buildSpreadCard(latest, prev) {
+    const card = document.createElement('div');
+    card.className = 'spread-card';
+
+    let html = '<div class="spread-card-title">Prediction Rate Spread</div>';
 
     const outcomes = latest.Outcomes;
     for (let i = 0; i < outcomes.length; i++) {
@@ -993,19 +998,23 @@ body {
             const gapDelta = absDiff - prevDiff;
             if (Math.abs(gapDelta) > 0.0005) {
               const cls = gapDelta > 0 ? 'pos' : 'neg';
-              deltaHtml = `<span class="pred-comp-delta ${cls}">${fmtDelta(gapDelta)}</span>`;
+              deltaHtml = `<span class="spread-delta ${cls}">${fmtDelta(gapDelta)}</span>`;
             }
           }
         }
 
-        const item = document.createElement('div');
-        item.className = 'pred-comp-item';
-        item.innerHTML = `<span class="pred-comp-pair"><span style="color:${colA}">${esc(a.Outcome)}</span> <span style="color:var(--text-4)">vs</span> <span style="color:${colB}">${esc(b.Outcome)}</span></span> <span class="pred-comp-val">${(absDiff * 100).toFixed(1)}%</span>${deltaHtml}`;
-        container.appendChild(item);
+        html += `
+          <div class="spread-row">
+            <span class="spread-pair"><span style="color:${colA}">${esc(a.Outcome)}</span> <span style="color:var(--text-3)">vs</span> <span style="color:${colB}">${esc(b.Outcome)}</span></span>
+            <span class="spread-val">${(absDiff * 100).toFixed(1)}<span>%</span></span>
+            ${deltaHtml}
+          </div>
+        `;
       }
     }
 
-    outcomeRowEl.parentNode.insertBefore(container, outcomeRowEl.nextSibling);
+    card.innerHTML = html;
+    return card;
   }
 
   function fmtDelta(d) {
