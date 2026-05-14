@@ -113,7 +113,7 @@ func (cmd *Serve) handleGetMarketAnalysis(w http.ResponseWriter, r *http.Request
 	}
 
 	days := 7
-	limit := 10000
+	limit := 100000
 
 	if daysStr := r.URL.Query().Get("days"); daysStr != "" {
 		parsedDays, err := strconv.Atoi(daysStr)
