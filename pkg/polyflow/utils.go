@@ -134,7 +134,7 @@ func GetSlugFromURL(rawURL string) (string, error) {
 		)
 	}
 
-	if pathParts[0] != "event" {
+	if pathParts[0] != "event" && pathParts[1] != "event" {
 		return "", fmt.Errorf(
 			"not a polymarket event url: %s",
 			rawURL,

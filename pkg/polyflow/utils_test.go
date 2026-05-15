@@ -336,6 +336,11 @@ func TestGetSlugFromURL(t *testing.T) {
 			expected: "confirmed-case-of-hantavirus-in-us-by-may-15",
 		},
 		{
+			name:     "simple fr event url",
+			url:      "https://polymarket.com/fr/event/strait-of-hormuz-traffic-returns-to-normal-by-july-31",
+			expected: "strait-of-hormuz-traffic-returns-to-normal-by-july-31",
+		},
+		{
 			name:     "simple event url",
 			url:      "https://polymarket.com/event/confirmed-case-of-hantavirus-in-us-by-may-15?tab=positions",
 			expected: "confirmed-case-of-hantavirus-in-us-by-may-15",
