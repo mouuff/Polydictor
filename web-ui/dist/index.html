@@ -22,64 +22,59 @@
    THEME — CSS custom properties
    ================================================================ */
 :root {
-  --bg-0: #06090f;
-  --bg-1: #0c1120;
-  --bg-2: #111827;
-  --bg-3: #1a2332;
-  --bg-4: #1e293b;
-  --bg-glass: rgba(12, 17, 32, 0.7);
-  --bg-hover: rgba(255,255,255,0.03);
-  --bg-active: rgba(99,179,237,0.08);
+  --bg-0: #ffffff;
+  --bg-1: #f8f9fb;
+  --bg-2: #f1f3f5;
+  --bg-3: #e9ecef;
+  --bg-4: #dee2e6;
+  --bg-glass: rgba(255,255,255,0.85);
+  --bg-hover: rgba(0,0,0,0.03);
+  --bg-active: rgba(37,99,235,0.06);
 
-  --border-0: rgba(255,255,255,0.04);
-  --border-1: rgba(255,255,255,0.07);
-  --border-2: rgba(255,255,255,0.12);
-  --border-accent: rgba(99,179,237,0.3);
+  --border-0: #e9ecef;
+  --border-1: #dee2e6;
+  --border-2: #ced4da;
+  --border-accent: rgba(37,99,235,0.3);
 
-  --text-0: #f1f5f9;
-  --text-1: #cbd5e1;
-  --text-2: #94a3b8;
-  --text-3: #64748b;
-  --text-4: #475569;
+  --text-0: #1a1a1a;
+  --text-1: #333333;
+  --text-2: #6b7280;
+  --text-3: #9ca3af;
+  --text-4: #9ca3af;
 
-  /* Primary: PredictionRate accent — bright, noticeable */
-  --prediction: #38bdf8;
-  --prediction-dim: rgba(56,189,248,0.12);
-  --prediction-glow: rgba(56,189,248,0.2);
+  --prediction: #2563eb;
+  --prediction-dim: rgba(37,99,235,0.08);
+  --prediction-glow: rgba(37,99,235,0.15);
 
-  /* Price: muted, softer */
-  --price: #94a3b8;
-  --price-dim: rgba(148,163,184,0.1);
+  --price: #6b7280;
+  --price-dim: rgba(107,114,128,0.08);
 
-  /* Outcome palette */
-  --outcome-yes: #38bdf8;
-  --outcome-no: #f87171;
-  --outcome-alt0: #a78bfa;
-  --outcome-alt1: #34d399;
-  --outcome-alt2: #fbbf24;
-  --outcome-alt3: #fb923c;
+  --outcome-yes: #2563eb;
+  --outcome-no: #dc2626;
+  --outcome-alt0: #7c3aed;
+  --outcome-alt1: #059669;
+  --outcome-alt2: #d97706;
+  --outcome-alt3: #ea580c;
 
-  /* Semantic */
-  --green: #34d399;
-  --green-dim: rgba(52,211,153,0.12);
-  --red: #f87171;
-  --red-dim: rgba(248,113,113,0.12);
+  --green: #059669;
+  --green-dim: rgba(5,150,105,0.08);
+  --red: #dc2626;
+  --red-dim: rgba(220,38,38,0.08);
 
-  /* Metrics */
-  --color-PredictionRate: #38bdf8;
-  --color-Price: #94a3b8;
-  --color-ProfitRate: #fbbf24;
-  --color-WeightedProfitRate: #a78bfa;
-  --color-TotalProfit: #f472b6;
+  --color-PredictionRate: #2563eb;
+  --color-Price: #6b7280;
+  --color-ProfitRate: #d97706;
+  --color-WeightedProfitRate: #7c3aed;
+  --color-TotalProfit: #db2777;
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
   --radius-pill: 999px;
 
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.35);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+  --shadow-md: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,0.1);
 
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
@@ -88,7 +83,7 @@
   --transition-normal: 0.25s ease;
   --transition-slow: 0.4s cubic-bezier(0.4,0,0.2,1);
 
-  --sidebar-w: 370px;
+  --sidebar-w: 340px;
 }
 
 /* ================================================================
@@ -107,8 +102,8 @@ body {
 
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: var(--radius-pill); }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: var(--radius-pill); }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
 
 /* ================================================================
    LAYOUT
@@ -126,9 +121,8 @@ body {
   pointer-events: auto;
   padding: 12px 18px;
   border-radius: var(--radius-md);
-  background: var(--bg-2);
+  background: var(--bg-0);
   border: 1px solid var(--border-1);
-  backdrop-filter: blur(14px);
   box-shadow: var(--shadow-lg);
   font-size: 13px; font-weight: 500; color: var(--text-0);
   display: flex; align-items: center; gap: 8px;
@@ -163,7 +157,7 @@ body {
   display: flex; align-items: center; justify-content: center;
   font-size: 11px; transition: var(--transition-normal);
 }
-.sidebar-toggle:hover { background: var(--prediction); color: var(--bg-0); border-color: var(--prediction); }
+.sidebar-toggle:hover { background: var(--bg-3); color: var(--text-1); border-color: var(--border-2); }
 .sidebar.collapsed ~ .sidebar-toggle { left: 8px; transform: translateX(0); }
 
 /* Brand */
@@ -175,7 +169,7 @@ body {
 .brand-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
 .brand-mark {
   width: 30px; height: 30px; border-radius: var(--radius-sm);
-  background: linear-gradient(135deg, var(--prediction), #818cf8);
+  background: var(--prediction);
   display: flex; align-items: center; justify-content: center;
   font-weight: 800; font-size: 15px; color: white;
 }
@@ -199,7 +193,7 @@ body {
 .add-input:focus { border-color: var(--prediction); box-shadow: 0 0 0 2px var(--prediction-glow); }
 .add-btn {
   padding: 0 14px; border-radius: var(--radius-md); border: none;
-  background: var(--prediction); color: var(--bg-0);
+  background: var(--prediction); color: white;
   font-weight: 600; font-size: 12px; font-family: var(--font-sans);
   cursor: pointer; transition: var(--transition-fast);
   display: flex; align-items: center; gap: 5px; white-space: nowrap;
@@ -207,8 +201,8 @@ body {
 .add-btn:hover { filter: brightness(1.1); }
 .add-btn:disabled { opacity: .45; cursor: not-allowed; }
 .btn-spinner {
-  width: 12px; height: 12px; border: 2px solid rgba(0,0,0,.2);
-  border-top-color: var(--bg-0); border-radius: 50%;
+  width: 12px; height: 12px; border: 2px solid rgba(255,255,255,.3);
+  border-top-color: white; border-radius: 50%;
   animation: spin .5s linear infinite;
 }
 @keyframes spin { to{transform:rotate(360deg)} }
@@ -261,7 +255,7 @@ body {
 .mkt-id { font-size: 10.5px; color: var(--text-4); font-family: var(--font-mono); }
 
 /* Skeleton */
-.skel { border-radius: var(--radius-sm); background: linear-gradient(90deg, var(--bg-3) 25%, rgba(255,255,255,.03) 50%, var(--bg-3) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+.skel { border-radius: var(--radius-sm); background: linear-gradient(90deg, var(--bg-3) 25%, var(--bg-2) 50%, var(--bg-3) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
 @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 
 /* ================================================================
@@ -274,7 +268,7 @@ body {
   padding: 14px 24px; border-bottom: 1px solid var(--border-0);
   display: flex; justify-content: space-between; align-items: flex-start;
   gap: 14px; flex-wrap: wrap; flex-shrink: 0;
-  background: var(--bg-glass); backdrop-filter: blur(10px);
+  background: var(--bg-0);
 }
 .topbar-left { display: flex; gap: 12px; align-items: flex-start; min-width: 0; flex: 1; }
 .topbar-img {
@@ -304,7 +298,7 @@ body {
   font-family: var(--font-sans); cursor: pointer; transition: var(--transition-fast);
 }
 .pill:hover { color: var(--text-1); background: var(--bg-hover); }
-.pill.on { background: var(--prediction); color: var(--bg-0); }
+.pill.on { background: var(--prediction); color: white; }
 
 .refresh-btn {
   padding: 7px 12px; border-radius: var(--radius-md);
@@ -431,7 +425,7 @@ body {
   user-select: none;
 }
 .m-toggle:hover { background: var(--bg-hover); color: var(--text-2); }
-.m-toggle.on { border-color: var(--toggle-color, var(--border-accent)); background: rgba(255,255,255,.03); color: var(--text-0); }
+.m-toggle.on { border-color: var(--toggle-color, var(--border-accent)); background: var(--bg-2); color: var(--text-0); }
 .m-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 
 /* Outcome filter row */
@@ -465,6 +459,7 @@ body {
 .chart-box.fullscreen {
   position: fixed; inset: 0; z-index: 9998;
   border-radius: 0; height: 100vh !important; padding: 20px;
+  background: var(--bg-0);
 }
 .chart-box canvas { width: 100% !important; height: 100% !important; }
 
@@ -486,11 +481,11 @@ body {
 /* Placeholder chart SVG */
 .ph-chart { width: 240px; height: 60px; margin-top: 20px; }
 .ph-line {
-  stroke: var(--prediction); stroke-width: 1.5; fill: none; opacity: .25;
+  stroke: var(--prediction); stroke-width: 1.5; fill: none; opacity: .4;
   stroke-dasharray: 300; stroke-dashoffset: 300;
   animation: drawPh 3s ease-in-out infinite;
 }
-.ph-area { fill: var(--prediction); opacity: .04; }
+.ph-area { fill: var(--prediction); opacity: .06; }
 @keyframes drawPh {
   0%{stroke-dashoffset:300;opacity:.1} 50%{stroke-dashoffset:0;opacity:.25} 100%{stroke-dashoffset:-300;opacity:.1}
 }
@@ -517,7 +512,7 @@ body {
   .sidebar {
     position: fixed; left: 0; top: 0; bottom: 0;
     width: 310px; min-width: 310px; z-index: 1000;
-    box-shadow: var(--shadow-lg);
+    box-shadow: 4px 0 20px rgba(0,0,0,0.08);
   }
   .sidebar.collapsed { width: 0; min-width: 0; }
   .sidebar-toggle { left: 6px; z-index: 1001; }
@@ -600,7 +595,7 @@ body {
       <!-- Loading state -->
       <div id="stLoading" style="display:none">
         <div class="state-view">
-          <div class="state-icon" style="background:var(--prediction-dim)">&#9203;</div>
+          <div class="state-icon">&#9203;</div>
           <div class="state-h">Loading Analysis</div>
           <div class="state-p">Fetching market data…</div>
           <div class="ld-dots"><div class="ld-dot"></div><div class="ld-dot"></div><div class="ld-dot"></div></div>
@@ -610,7 +605,7 @@ body {
       <!-- No data state -->
       <div id="stNoData" style="display:none">
         <div class="state-view">
-          <div class="state-icon" style="background:rgba(251,191,36,.1)">&#9200;</div>
+          <div class="state-icon">&#9200;</div>
           <div class="state-h">Analysis In Progress</div>
           <div class="state-p">Analysis data is still being generated for this market. Please come back later.</div>
           <svg class="ph-chart" viewBox="0 0 240 60">
@@ -623,7 +618,7 @@ body {
       <!-- Error state -->
       <div id="stError" style="display:none">
         <div class="state-view">
-          <div class="state-icon" style="background:var(--red-dim)">&#9888;</div>
+          <div class="state-icon">&#9888;</div>
           <div class="state-h" id="errH">Failed to Load</div>
           <div class="state-p" id="errP">Please try again later.</div>
         </div>
@@ -704,16 +699,16 @@ body {
 
   // Metric display config — order matters (PredictionRate first)
   const METRICS = [
-    { k: 'PredictionRate',     label: 'Prediction Rate',    css: '--color-PredictionRate',     color: '#38bdf8',  dash: [],             w: 3.5, fill: false, hero: true },
-    { k: 'Price',              label: 'Price',              css: '--color-Price',              color: '#94a3b8',  dash: [6, 3],         w: 2,   fill: false },
-    { k: 'ProfitRate',         label: 'Profit Rate',        css: '--color-ProfitRate',         color: '#fbbf24',  dash: [3, 3],         w: 1.5, fill: false },
-    { k: 'WeightedProfitRate', label: 'Wtd Profit Rate',    css: '--color-WeightedProfitRate', color: '#a78bfa',  dash: [10, 4, 2, 4],  w: 1.5, fill: false },
-    { k: 'TotalProfit',        label: 'Total Profit',       css: '--color-TotalProfit',        color: '#f472b6',  dash: [],             w: 2,   fill: true, axis: 'profit' },
+    { k: 'PredictionRate',     label: 'Prediction Rate',    css: '--color-PredictionRate',     color: '#2563eb',  dash: [],             w: 2.5, fill: false, hero: true },
+    { k: 'Price',              label: 'Price',              css: '--color-Price',              color: '#6b7280',  dash: [6, 3],         w: 1.5, fill: false },
+    { k: 'ProfitRate',         label: 'Profit Rate',        css: '--color-ProfitRate',         color: '#d97706',  dash: [3, 3],         w: 1.5, fill: false },
+    { k: 'WeightedProfitRate', label: 'Wtd Profit Rate',    css: '--color-WeightedProfitRate', color: '#7c3aed',  dash: [10, 4, 2, 4],  w: 1.5, fill: false },
+    { k: 'TotalProfit',        label: 'Total Profit',       css: '--color-TotalProfit',        color: '#db2777',  dash: [],             w: 2,   fill: true, axis: 'profit' },
   ];
 
   // Outcome colors
-  const O_COLORS = { Yes: '#38bdf8', No: '#f87171' };
-  const O_FALLBACK = ['#a78bfa', '#34d399', '#fbbf24', '#fb923c', '#f472b6', '#22d3ee'];
+  const O_COLORS = { Yes: '#2563eb', No: '#dc2626' };
+  const O_FALLBACK = ['#7c3aed', '#059669', '#d97706', '#ea580c', '#db2777', '#0891b2'];
   function oColor(name, i) { return O_COLORS[name] || O_FALLBACK[i % O_FALLBACK.length]; }
 
   // ============================================================
@@ -1206,7 +1201,7 @@ body {
           if (len < 2) return;
 
           ctx.save();
-          ctx.globalAlpha = 0.06;
+          ctx.globalAlpha = 0.08;
 
           ctx.beginPath();
           for (let i = 0; i < len; i++) {
@@ -1238,18 +1233,18 @@ body {
           legend: {
             position: 'bottom',
             labels: {
-              color: '#64748b', padding: 14, usePointStyle: true, pointStyle: 'circle',
+              color: '#6b7280', padding: 14, usePointStyle: true, pointStyle: 'circle',
               font: { size: 11, family: "'Inter', sans-serif" },
             },
           },
           tooltip: {
-            backgroundColor: 'rgba(12,17,32,.95)',
+            backgroundColor: '#1a1a1a',
             titleColor: '#f1f5f9',
-            bodyColor: '#cbd5e1',
-            borderColor: 'rgba(255,255,255,.08)',
+            bodyColor: '#d1d5db',
+            borderColor: 'rgba(0,0,0,.1)',
             borderWidth: 1,
             padding: 12,
-            cornerRadius: 10,
+            cornerRadius: 8,
             titleFont: { weight: '600', size: 12 },
             bodyFont: { family: "'JetBrains Mono', monospace", size: 11.5 },
             callbacks: {
@@ -1280,22 +1275,22 @@ body {
               tooltipFormat: 'DDD T',
               displayFormats: { hour: 'HH:mm', day: 'MMM dd', week: 'MMM dd' },
             },
-            ticks: { color: '#475569', maxTicksLimit: 10, font: { size: 11 } },
-            grid: { color: 'rgba(255,255,255,.025)', drawBorder: false },
+            ticks: { color: '#9ca3af', maxTicksLimit: 10, font: { size: 11 } },
+            grid: { color: 'rgba(0,0,0,.05)', drawBorder: false },
           },
           y: {
             type: 'linear', position: 'left',
             ticks: {
-              color: '#475569',
+              color: '#9ca3af',
               font: { size: 11, family: "'JetBrains Mono', monospace" },
               callback: v => (v * 100).toFixed(0) + '%',
             },
-            grid: { color: 'rgba(255,255,255,.03)', drawBorder: false },
+            grid: { color: 'rgba(0,0,0,.05)', drawBorder: false },
           },
           profitAxis: {
             type: 'linear', position: 'right', display: hasProfitAxis,
             ticks: {
-              color: '#f472b6',
+              color: '#db2777',
               font: { size: 11, family: "'JetBrains Mono', monospace" },
               callback: v => compact(v),
             },
@@ -1312,7 +1307,7 @@ body {
     const r = parseInt(hex.slice(1, 3), 16);
     const g = parseInt(hex.slice(3, 5), 16);
     const b = parseInt(hex.slice(5, 7), 16);
-    const gray = 148;
+    const gray = 180;
     const mix = (c) => Math.round(c + (gray - c) * (1 - factor));
     const toHex = (v) => v.toString(16).padStart(2, '0');
     return '#' + toHex(mix(r)) + toHex(mix(g)) + toHex(mix(b));
