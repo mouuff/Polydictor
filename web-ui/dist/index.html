@@ -688,6 +688,7 @@ body {
     activeOnly: true,
     activeCache: {},     // marketId -> true/false/undefined (undefined = not checked yet)
     spreadCache: {},    // marketId -> spread value (max prediction rate diff between outcomes)
+    firstOutcomeCache: {}, // marketId -> { name, price }
     sortSpread: true,
     adding: false,
     fs: false,           // chart fullscreen
@@ -811,7 +812,14 @@ body {
         const d = await apiGet('/get-market-analysis?marketId=' + m.MarketId + '&days=1');
         const active = !!(d && d.length);
         S.activeCache[m.MarketId] = active;
-        if (active) S.spreadCache[m.MarketId] = calcSpread(d[d.length - 1]);
+        if (active) {
+          const latest = d[d.length - 1];
+          S.spreadCache[m.MarketId] = calcSpread(latest);
+          if (latest.Outcomes && latest.Outcomes.length) {
+            const o = latest.Outcomes[0];
+            S.firstOutcomeCache[m.MarketId] = { name: o.Outcome, price: o.Price };
+          }
+        }
       } catch {
         S.activeCache[m.MarketId] = false;
       }
@@ -851,13 +859,19 @@ body {
     list.forEach(m => {
       const active = S.market && S.market.MarketId === m.MarketId;
       const spread = S.spreadCache[m.MarketId];
+      const fo = S.firstOutcomeCache[m.MarketId];
       const card = document.createElement('div');
       card.className = 'mkt-card' + (active ? ' active' : '');
+      let metaHtml = '';
+      if (fo) {
+        metaHtml += `<span style="font-weight:600">${esc(fo.name)}</span> ${pct(fo.price, 0)}%`;
+        if (spread != null) metaHtml += ` · <span style="color:var(--prediction);font-weight:600">spread ${pct(spread, 1)}%</span>`;
+      }
       card.innerHTML = `
         <img class="mkt-img" src="${esc(m.Image)}" alt="" loading="lazy" onerror="this.style.display='none'" />
         <div class="mkt-body">
           <div class="mkt-q">${esc(m.Question)}</div>
-          <div class="mkt-id">#${esc(m.MarketId)}${spread != null ? ' · <span style="color:var(--prediction);font-weight:600">spread ' + pct(spread, 1) + '%</span>' : ''}</div>
+          <div class="mkt-id">${metaHtml || '#' + esc(m.MarketId)}</div>
         </div>
       `;
       card.onclick = () => selectMarket(m);
@@ -918,7 +932,12 @@ body {
       }
       S.data = d;
       S.activeCache[reqId] = true;
-      S.spreadCache[reqId] = calcSpread(d[d.length - 1]);
+      const latestEntry = d[d.length - 1];
+      S.spreadCache[reqId] = calcSpread(latestEntry);
+      if (latestEntry.Outcomes && latestEntry.Outcomes.length) {
+        const o = latestEntry.Outcomes[0];
+        S.firstOutcomeCache[reqId] = { name: o.Outcome, price: o.Price };
+      }
       renderList();
       // Reset outcome filter if it doesn't exist in this market
       if (S.outcome !== 'all') {
