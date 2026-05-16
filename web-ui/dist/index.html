@@ -543,8 +543,8 @@ body {
     </div>
     <div class="sidebar-search">
       <input class="search-box" id="searchBox" type="text" placeholder="Filter markets…" />
-      <button class="active-toggle" id="activeOnly">Active only</button>
-      <button class="active-toggle" id="sortSpread">Sort by spread</button>
+      <button class="active-toggle on" id="activeOnly">Active only</button>
+      <button class="active-toggle on" id="sortSpread">Sort by prediction spread</button>
     </div>
     <div class="market-list" id="marketList"></div>
   </aside>
@@ -685,10 +685,10 @@ body {
     },
     outcome: 'all',      // outcome filter
     search: '',
-    activeOnly: false,
+    activeOnly: true,
     activeCache: {},     // marketId -> true/false/undefined (undefined = not checked yet)
     spreadCache: {},    // marketId -> spread value (max prediction rate diff between outcomes)
-    sortSpread: false,
+    sortSpread: true,
     adding: false,
     fs: false,           // chart fullscreen
     refreshMs: 10 * 60 * 1000,
