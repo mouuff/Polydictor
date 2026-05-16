@@ -823,8 +823,8 @@ body {
       } catch {
         S.activeCache[m.MarketId] = false;
       }
+      renderList();
     }
-    renderList();
   }
 
   // Render list
@@ -864,7 +864,7 @@ body {
       card.className = 'mkt-card' + (active ? ' active' : '');
       let metaHtml = '';
       if (fo) {
-        metaHtml += `<span style="font-weight:600">${esc(fo.name)}</span> ${pct(fo.price, 0)}%`;
+        metaHtml += `<span style="font-weight:600">${esc(fo.name)}</span> ${pctSuffix(fo.price, 0)}`;
         if (spread != null) metaHtml += ` · <span style="color:var(--prediction);font-weight:600">spread ${pct(spread, 1)}%</span>`;
       }
       card.innerHTML = `
