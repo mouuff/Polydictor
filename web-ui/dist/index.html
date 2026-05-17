@@ -566,6 +566,7 @@ body {
         <div style="min-width:0">
           <div class="topbar-title" id="tbTitle">Select a market</div>
           <div class="topbar-slug" id="tbSlug">Choose a tracked market from the sidebar</div>
+          <div class="topbar-slug" id="tbLastUpdate" style="display:none"></div>
         </div>
       </div>
       <div class="controls-row" id="ctrlRow">
@@ -894,7 +895,26 @@ body {
   const tbImg = document.getElementById('tbImg');
   const tbTitle = document.getElementById('tbTitle');
   const tbSlug = document.getElementById('tbSlug');
+  const tbLastUpdate = document.getElementById('tbLastUpdate');
   const ctrlRow = document.getElementById('ctrlRow');
+
+  function updateLastLookup() {
+    if (!S.data.length) { tbLastUpdate.style.display = 'none'; return; }
+    const latest = S.data[S.data.length - 1];
+    const ts = new Date(latest.LookupTime);
+    const agoMs = Date.now() - ts.getTime();
+    const agoMin = Math.floor(agoMs / 60000);
+    let agoText;
+    if (agoMin < 1) agoText = 'just now';
+    else if (agoMin < 60) agoText = agoMin + 'm ago';
+    else agoText = Math.floor(agoMin / 60) + 'h ' + (agoMin % 60) + 'm ago';
+    let color = 'var(--text-2)';
+    if (agoMs > 60 * 60 * 1000) color = '#dc2626';
+    else if (agoMs > 30 * 60 * 1000) color = '#d97706';
+    tbLastUpdate.style.display = '';
+    tbLastUpdate.style.color = color;
+    tbLastUpdate.textContent = 'Last update: ' + ts.toLocaleTimeString() + ' (' + agoText + ')';
+  }
 
   async function selectMarket(m) {
     S.market = m;
@@ -953,6 +973,7 @@ body {
         if (!available.has(S.outcome)) S.outcome = 'all';
       }
       showSt('dashContent');
+      updateLastLookup();
       renderOutcomeCards();
       renderMetricBar();
       renderOutcomeBar();
