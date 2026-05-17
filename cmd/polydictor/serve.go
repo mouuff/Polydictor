@@ -20,6 +20,7 @@ type Serve struct {
 	flagSet *flag.FlagSet
 
 	dbPath string
+	addr   string
 
 	db  *polyflow.SQLiteStore
 	api *polyapi.Polyapi
@@ -42,6 +43,12 @@ func (cmd *Serve) Init(args []string) error {
 		"db",
 		"./store.db",
 		"database path",
+	)
+	cmd.flagSet.StringVar(
+		&cmd.addr,
+		"addr",
+		":8081",
+		"addr string (e.g. :8081)",
 	)
 
 	return cmd.flagSet.Parse(args)
@@ -78,11 +85,11 @@ func (cmd *Serve) Run() error {
 	mux.HandleFunc("/get-market-analysis", cmd.handleGetMarketAnalysis)
 	mux.HandleFunc("/tracked", cmd.handleTrackedMarkets)
 
-	log.Println("Server starting on :8081...")
+	log.Println("Server starting on ", cmd.addr)
 
 	handler := cors.Default().Handler(mux)
 
-	if err := http.ListenAndServe(":8081", handler); err != nil {
+	if err := http.ListenAndServe(cmd.addr, handler); err != nil {
 		return fmt.Errorf("server failed: %w", err)
 	}
 
