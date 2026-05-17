@@ -810,10 +810,12 @@ body {
       if (S.activeCache[m.MarketId] !== undefined) continue;
       try {
         const d = await apiGet('/get-market-analysis?marketId=' + m.MarketId + '&days=1');
-        const active = !!(d && d.length);
+        const hasData = !!(d && d.length);
+        const latest = hasData ? d[d.length - 1] : null;
+        const sixHoursAgo = Date.now() - 6 * 60 * 60 * 1000;
+        const active = hasData && new Date(latest.LookupTime).getTime() > sixHoursAgo;
         S.activeCache[m.MarketId] = active;
-        if (active) {
-          const latest = d[d.length - 1];
+        if (hasData) {
           S.spreadCache[m.MarketId] = calcSpread(latest);
           if (latest.Outcomes && latest.Outcomes.length) {
             const o = latest.Outcomes[0];
@@ -931,8 +933,9 @@ body {
         showSt('stNoData'); return;
       }
       S.data = cleanData(d);
-      S.activeCache[reqId] = true;
       const latestEntry = S.data[S.data.length - 1];
+      const sixHoursAgo = Date.now() - 6 * 60 * 60 * 1000;
+      S.activeCache[reqId] = new Date(latestEntry.LookupTime).getTime() > sixHoursAgo;
       S.spreadCache[reqId] = calcSpread(latestEntry);
       if (latestEntry.Outcomes && latestEntry.Outcomes.length) {
         const o = latestEntry.Outcomes[0];
