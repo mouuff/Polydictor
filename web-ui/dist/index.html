@@ -175,9 +175,7 @@ body {
 .brand-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
 .brand-mark {
   width: 30px; height: 30px; border-radius: var(--radius-sm);
-  background: var(--prediction);
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 800; font-size: 15px; color: white;
+  object-fit: contain;
 }
 .brand-name { font-size: 16px; font-weight: 700; letter-spacing: -.3px; }
 .brand-tag {
@@ -538,7 +536,7 @@ body {
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
       <div class="brand-row">
-        <div class="brand-mark">P</div>
+        <img class="brand-mark" src="/favicon.svg" alt="P" />
         <span class="brand-name">Polydictor</span>
         <span class="brand-tag">Beta</span>
       </div>
