@@ -930,9 +930,9 @@ body {
         S.activeCache[reqId] = false;
         showSt('stNoData'); return;
       }
-      S.data = d;
+      S.data = cleanData(d);
       S.activeCache[reqId] = true;
-      const latestEntry = d[d.length - 1];
+      const latestEntry = S.data[S.data.length - 1];
       S.spreadCache[reqId] = calcSpread(latestEntry);
       if (latestEntry.Outcomes && latestEntry.Outcomes.length) {
         const o = latestEntry.Outcomes[0];
@@ -942,7 +942,7 @@ body {
       // Reset outcome filter if it doesn't exist in this market
       if (S.outcome !== 'all') {
         const available = new Set();
-        d.forEach(e => { if (e.Outcomes) e.Outcomes.forEach(o => available.add(o.Outcome)); });
+        S.data.forEach(e => { if (e.Outcomes) e.Outcomes.forEach(o => available.add(o.Outcome)); });
         if (!available.has(S.outcome)) S.outcome = 'all';
       }
       showSt('dashContent');
@@ -1079,6 +1079,15 @@ body {
     if (abs >= 1e6) return sign + (abs / 1e6).toFixed(2) + 'M';
     if (abs >= 1e3) return sign + (abs / 1e3).toFixed(1) + 'K';
     return n.toFixed(2);
+  }
+
+  // Sort by time, deduplicate entries with same timestamp (keep last)
+  function cleanData(raw) {
+    if (!raw || !raw.length) return [];
+    raw.sort((a, b) => (a.LookupTime || '').localeCompare(b.LookupTime || ''));
+    const seen = new Map();
+    raw.forEach(entry => { seen.set(entry.LookupTime, entry); });
+    return [...seen.values()];
   }
 
   // ============================================================
