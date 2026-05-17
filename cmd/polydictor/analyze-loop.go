@@ -26,7 +26,7 @@ func (cmd *AnalyzeLoopCmd) Name() string {
 func (cmd *AnalyzeLoopCmd) Init(args []string) error {
 	cmd.flagSet = flag.NewFlagSet(cmd.Name(), flag.ExitOnError)
 	cmd.flagSet.StringVar(&cmd.dbPath, "db", "./store.db", "database path")
-	cmd.flagSet.IntVar(&cmd.frequencyMinutes, "frequency", 30, "frequency in minutes")
+	cmd.flagSet.IntVar(&cmd.frequencyMinutes, "frequency", 20, "frequency in minutes")
 	return cmd.flagSet.Parse(args)
 }
 
