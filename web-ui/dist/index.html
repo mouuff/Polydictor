@@ -1081,13 +1081,26 @@ body {
     return n.toFixed(2);
   }
 
-  // Sort by time, deduplicate entries with same timestamp (keep last)
+  // Parse timestamp to epoch ms (cached on entry for performance)
+  function timeMs(entry) {
+    if (entry._ts === undefined) entry._ts = new Date(entry.LookupTime).getTime();
+    return entry._ts;
+  }
+
+  // Sort by actual time, deduplicate entries within 1s of each other (keep last)
   function cleanData(raw) {
     if (!raw || !raw.length) return [];
-    raw.sort((a, b) => (a.LookupTime || '').localeCompare(b.LookupTime || ''));
-    const seen = new Map();
-    raw.forEach(entry => { seen.set(entry.LookupTime, entry); });
-    return [...seen.values()];
+    raw.forEach(e => timeMs(e)); // pre-parse all timestamps
+    raw.sort((a, b) => a._ts - b._ts);
+    const result = [raw[0]];
+    for (let i = 1; i < raw.length; i++) {
+      if (raw[i]._ts - result[result.length - 1]._ts < 1000) {
+        result[result.length - 1] = raw[i]; // same second, keep later entry
+      } else {
+        result.push(raw[i]);
+      }
+    }
+    return result;
   }
 
   // ============================================================
@@ -1177,8 +1190,9 @@ body {
         const values = data.map(entry => {
           if (!entry.Outcomes) return null;
           const o = entry.Outcomes.find(x => x.Outcome === oName);
-          return o ? { x: entry.LookupTime, y: o[metric.k] } : null;
+          return o ? { x: entry.LookupTime, y: o[metric.k], _ts: entry._ts } : null;
         }).filter(Boolean);
+        values.sort((a, b) => a._ts - b._ts);
 
         const ds = {
           label: `${oName} · ${metric.label}`,
