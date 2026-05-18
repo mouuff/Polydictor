@@ -549,6 +549,7 @@ body {
       <input class="search-box" id="searchBox" type="text" placeholder="Filter markets…" />
       <button class="active-toggle on" id="activeOnly">Active only</button>
       <button class="active-toggle on" id="sortSpread">Sort by prediction spread</button>
+      <button class="active-toggle" id="sortPrice">Sort by price</button>
     </div>
     <div class="market-list" id="marketList"></div>
   </aside>
@@ -695,6 +696,7 @@ body {
     spreadCache: {},    // marketId -> spread value (max prediction rate diff between outcomes)
     firstOutcomeCache: {}, // marketId -> { name, price }
     sortSpread: true,
+    sortPrice: false,
     adding: false,
     fs: false,           // chart fullscreen
     refreshMs: 10 * 60 * 1000,
@@ -793,7 +795,17 @@ body {
   const sortSpreadBtn = document.getElementById('sortSpread');
   sortSpreadBtn.onclick = () => {
     S.sortSpread = !S.sortSpread;
+    if (S.sortSpread) { S.sortPrice = false; sortPriceBtn.classList.remove('on'); }
     sortSpreadBtn.classList.toggle('on', S.sortSpread);
+    renderList();
+  };
+
+  // Sort by price
+  const sortPriceBtn = document.getElementById('sortPrice');
+  sortPriceBtn.onclick = () => {
+    S.sortPrice = !S.sortPrice;
+    if (S.sortPrice) { S.sortSpread = false; sortSpreadBtn.classList.remove('on'); }
+    sortPriceBtn.classList.toggle('on', S.sortPrice);
     renderList();
   };
 
@@ -815,18 +827,34 @@ body {
       if (S.activeCache[m.MarketId] !== undefined) continue;
       try {
         const d = await apiGet('/get-market-analysis?marketId=' + m.MarketId + '&days=1');
-        const hasData = !!(d && d.length);
-        const latest = hasData ? d[d.length - 1] : null;
-        const cutoff = Date.now() - 3 * 60 * 60 * 1000;
-        const active = hasData && new Date(latest.LookupTime).getTime() > cutoff;
-        S.activeCache[m.MarketId] = active;
-        if (hasData) {
-          S.spreadCache[m.MarketId] = calcSpread(latest);
-          if (latest.Outcomes && latest.Outcomes.length) {
-            const o = latest.Outcomes[0];
-            S.firstOutcomeCache[m.MarketId] = { name: o.Outcome, price: o.Price };
-          }
-        }
+        updateSidebarCache(m.MarketId, d);
+      } catch {
+        S.activeCache[m.MarketId] = false;
+      }
+      renderList();
+    }
+  }
+
+  function updateSidebarCache(marketId, d) {
+    const hasData = !!(d && d.length);
+    const latest = hasData ? d[d.length - 1] : null;
+    const cutoff = Date.now() - 3 * 60 * 60 * 1000;
+    const active = hasData && new Date(latest.LookupTime).getTime() > cutoff;
+    S.activeCache[marketId] = active;
+    if (hasData) {
+      S.spreadCache[marketId] = calcSpread(latest);
+      if (latest.Outcomes && latest.Outcomes.length) {
+        const o = latest.Outcomes[0];
+        S.firstOutcomeCache[marketId] = { name: o.Outcome, price: o.Price };
+      }
+    }
+  }
+
+  async function refreshSidebar() {
+    for (const m of S.markets) {
+      try {
+        const d = await apiGet('/get-market-analysis?marketId=' + m.MarketId + '&days=1');
+        updateSidebarCache(m.MarketId, d);
       } catch {
         S.activeCache[m.MarketId] = false;
       }
@@ -844,6 +872,11 @@ body {
     );
     if (S.activeOnly) list = list.filter(m => S.activeCache[m.MarketId] === true);
     if (S.sortSpread) list.sort((a, b) => (S.spreadCache[b.MarketId] || 0) - (S.spreadCache[a.MarketId] || 0));
+    if (S.sortPrice) list.sort((a, b) => {
+      const pa = S.firstOutcomeCache[a.MarketId]?.price ?? 0;
+      const pb = S.firstOutcomeCache[b.MarketId]?.price ?? 0;
+      return pb - pa;
+    });
 
     listEl.innerHTML = '';
 
@@ -937,7 +970,7 @@ body {
     loadAnalysis();
   };
 
-  document.getElementById('refreshBtn').onclick = () => { loadAnalysis(); resetTimer(); };
+  document.getElementById('refreshBtn').onclick = () => { loadAnalysis(); refreshSidebar(); resetTimer(); };
 
   // ============================================================
   // 6. DATA LOADING & STATE ROUTING
@@ -1410,7 +1443,7 @@ body {
     updateCd();
     S._cdT = setInterval(() => { S.cdSec = Math.max(0, S.cdSec - 1); updateCd(); }, 1000);
     S._refreshT = setTimeout(async () => {
-      if (S.market) { await loadAnalysis(); resetTimer(); }
+      if (S.market) { await loadAnalysis(); refreshSidebar(); resetTimer(); }
     }, S.refreshMs);
   }
 
