@@ -837,7 +837,7 @@ body {
 
   function updateSidebarCache(marketId, d) {
     const hasData = !!(d && d.length);
-    const latest = hasData ? d[d.length - 1] : null;
+    const latest = hasData ? d[0] : null;
     const cutoff = Date.now() - 3 * 60 * 60 * 1000;
     const active = hasData && new Date(latest.LookupTime).getTime() > cutoff;
     S.activeCache[marketId] = active;
