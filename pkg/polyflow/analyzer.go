@@ -36,7 +36,7 @@ func (o *Analyzer) AnalyzeMarket(slug string, skipClosedMarket bool) (*MarketAna
 		return nil, fmt.Errorf("failed to get market info for slug %s: %w", slug, err)
 	}
 
-	if skipClosedMarket && market.Active == false {
+	if skipClosedMarket && market.Closed == true {
 		return nil, fmt.Errorf("market %s is not active", market.Slug)
 	}
 
