@@ -487,8 +487,29 @@ func TestGetMarketAnalysisSortedByDate(t *testing.T) {
 		)
 	}
 
-	if !results[1].LookupTime.After(results[0].LookupTime) {
-		t.Fatal("expected newest analysis first")
+	if !results[0].LookupTime.After(results[1].LookupTime) {
+		t.Fatal("expected oldest analysis first")
+	}
+
+	results, err = store.GetMarketAnalysisSince(
+		"market-sort",
+		time.Now().Add(-24*time.Hour),
+		1,
+	)
+	if err != nil {
+		t.Fatalf("failed to get analyses: %v", err)
+	}
+
+	if len(results) != 1 {
+		t.Fatalf(
+			"unexpected analysis count: got %d want %d",
+			len(results),
+			2,
+		)
+	}
+
+	if results[0].Slug != "new-market" {
+		t.Fatal("expected new analysis")
 	}
 }
 
