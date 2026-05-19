@@ -822,12 +822,27 @@ body {
     return Math.max(...rates) - Math.min(...rates);
   }
 
+  function fetchLatest(marketId) {
+    return apiGet('/get-market-analysis?marketId=' + marketId + '&limit=1');
+  }
+
+  function updateSidebarCache(marketId, entry) {
+    if (!entry) { S.activeCache[marketId] = false; return; }
+    const cutoff = Date.now() - 3 * 60 * 60 * 1000;
+    S.activeCache[marketId] = new Date(entry.LookupTime).getTime() > cutoff;
+    S.spreadCache[marketId] = calcSpread(entry);
+    if (entry.Outcomes && entry.Outcomes.length) {
+      const o = entry.Outcomes[0];
+      S.firstOutcomeCache[marketId] = { name: o.Outcome, price: o.Price };
+    }
+  }
+
   async function probeActivity() {
     for (const m of S.markets) {
       if (S.activeCache[m.MarketId] !== undefined) continue;
       try {
-        const d = await apiGet('/get-market-analysis?marketId=' + m.MarketId + '&days=1');
-        updateSidebarCache(m.MarketId, d);
+        const d = await fetchLatest(m.MarketId);
+        updateSidebarCache(m.MarketId, d && d.length ? d[0] : null);
       } catch {
         S.activeCache[m.MarketId] = false;
       }
@@ -835,26 +850,11 @@ body {
     }
   }
 
-  function updateSidebarCache(marketId, d) {
-    const hasData = !!(d && d.length);
-    const latest = hasData ? d[0] : null;
-    const cutoff = Date.now() - 3 * 60 * 60 * 1000;
-    const active = hasData && new Date(latest.LookupTime).getTime() > cutoff;
-    S.activeCache[marketId] = active;
-    if (hasData) {
-      S.spreadCache[marketId] = calcSpread(latest);
-      if (latest.Outcomes && latest.Outcomes.length) {
-        const o = latest.Outcomes[0];
-        S.firstOutcomeCache[marketId] = { name: o.Outcome, price: o.Price };
-      }
-    }
-  }
-
   async function refreshSidebar() {
     for (const m of S.markets) {
       try {
-        const d = await apiGet('/get-market-analysis?marketId=' + m.MarketId + '&days=1');
-        updateSidebarCache(m.MarketId, d);
+        const d = await fetchLatest(m.MarketId);
+        updateSidebarCache(m.MarketId, d && d.length ? d[0] : null);
       } catch {
         S.activeCache[m.MarketId] = false;
       }
