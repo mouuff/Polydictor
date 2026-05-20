@@ -127,7 +127,7 @@ func (c *Polyapi) GetTopHolders(ctx context.Context, market string) (*[]TokenHol
 	}
 
 	q := u.Query()
-	q.Set("limit", "20")
+	q.Set("limit", "30")
 	q.Set("minBalance", "1")
 	q.Set("market", market)
 	u.RawQuery = q.Encode()
