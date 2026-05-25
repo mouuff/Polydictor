@@ -9,7 +9,7 @@ GET https://data-api.polymarket.com/v1/closed-positions
 GET https://gamma-api.polymarket.com/markets/slug/will-the-steam-machine-cost-700-or-more-at-release
 
 ###
-GET https://gamma-api.polymarket.com/markets/slug/confirmed-case-of-hantavirus-in-us-by-may-15
+GET https://gamma-api.polymarket.com/markets/slug/will-a-province-schedule-a-referendum-to-leave-canada-before-2027
 
 ###
 GET https://gamma-api.polymarket.com/markets/slug/will-beyond-meat-announce-bankruptcy-before-2027-859-613-462-581-119
