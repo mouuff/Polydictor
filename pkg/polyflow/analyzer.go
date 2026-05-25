@@ -24,7 +24,7 @@ func NewAnalyzer(db Store) *Analyzer {
 		ctx:               context.Background(),
 		api:               polyapi.NewPolyapi(),
 		db:                db,
-		UserCacheDuration: 24 * time.Hour,
+		UserCacheDuration: 48 * time.Hour,
 		UserMinimumBets:   10,
 		Debug:             true,
 	}
