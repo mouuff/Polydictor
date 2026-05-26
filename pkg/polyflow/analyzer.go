@@ -149,6 +149,10 @@ func (o *Analyzer) GetScoredUsers(holders []polyapi.Holder) ([]*ScoredUser, erro
 	var scoredUsers []*ScoredUser
 
 	for _, holder := range holders {
+		if o.Debug {
+			log.Printf("Analyzing: User %s - Name: %s\n", holder.ProxyWallet, holder.Name)
+		}
+
 		entry, err := o.GetScoredUser(holder.ProxyWallet, holder.Name)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get scored user for wallet %s: %w", holder.ProxyWallet, err)
@@ -157,7 +161,7 @@ func (o *Analyzer) GetScoredUsers(holders []polyapi.Holder) ([]*ScoredUser, erro
 		scoredUsers = append(scoredUsers, entry)
 
 		if o.Debug {
-			log.Printf("User %s - Name: %s - Prediction Rate: %.2f%%, Profit Rate: %.2f%%, Profit: $%.2f\n",
+			log.Printf("Analyzed: User %s - Name: %s - Prediction Rate: %.2f%%, Profit Rate: %.2f%%, Profit: $%.2f\n",
 				holder.ProxyWallet, holder.Name, entry.PredictionRate*100, entry.ProfitRate*100, entry.Profit)
 		}
 	}
