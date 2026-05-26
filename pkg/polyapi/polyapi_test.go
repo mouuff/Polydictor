@@ -69,7 +69,7 @@ func TestGetMarketBySlug_Success(t *testing.T) {
 func TestGetUser_Success(t *testing.T) {
 	client := polyapi.NewPolyapi()
 
-	res, err := client.GetAllClosedPositions(context.Background(), "0x3a6efc8104f17068a8b08360518b0618c4e53291")
+	res, err := client.GetAllClosedPositions(context.Background(), "0x3a6efc8104f17068a8b08360518b0618c4e53291", 0)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -111,7 +111,7 @@ func TestGetUser_Success(t *testing.T) {
 func TestGetClosedPositions_Success(t *testing.T) {
 	client := polyapi.NewPolyapi()
 
-	res, err := client.GetAllClosedPositions(context.Background(), "0x5669c2d70390d821291a6843e587c6500f310f13")
+	res, err := client.GetAllClosedPositions(context.Background(), "0x5669c2d70390d821291a6843e587c6500f310f13", 0)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -147,6 +147,19 @@ func TestGetClosedPositions_Success(t *testing.T) {
 	ok, diff := containsClosedPosition(res, expected)
 	if !ok {
 		t.Fatalf("mismatch for slug=%s:\n%s", expected.Slug, diff)
+	}
+}
+
+func TestGetClosedPositions_MaxPosition_Success(t *testing.T) {
+	client := polyapi.NewPolyapi()
+
+	res, err := client.GetAllClosedPositions(context.Background(), "0x5669c2d70390d821291a6843e587c6500f310f13", 99)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(res) != 100 {
+		t.Fatalf("expected at least 100 result, got %d", len(res))
 	}
 }
 
@@ -303,7 +316,7 @@ func TestMockGetAllClosedPositions_Pagination(t *testing.T) {
 
 	client := newTestClient(server)
 
-	res, err := client.GetAllClosedPositions(context.Background(), "test-user")
+	res, err := client.GetAllClosedPositions(context.Background(), "test-user", 0)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

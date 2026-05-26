@@ -224,7 +224,7 @@ func (c *Polyapi) GetClosedPositions(ctx context.Context, user string, limit, of
 }
 
 // Auto-pagination
-func (c *Polyapi) GetAllClosedPositions(ctx context.Context, user string) ([]ClosedPosition, error) {
+func (c *Polyapi) GetAllClosedPositions(ctx context.Context, user string, maxPositions int) ([]ClosedPosition, error) {
 	const limit = 50
 
 	var (
@@ -245,6 +245,10 @@ func (c *Polyapi) GetAllClosedPositions(ctx context.Context, user string) ([]Clo
 		}
 
 		offset += limit
+
+		if maxPositions != 0 && offset > maxPositions {
+			break
+		}
 	}
 
 	return allPositions, nil

@@ -16,6 +16,7 @@ type Analyzer struct {
 	db                Store
 	UserCacheDuration time.Duration
 	UserMinimumBets   int
+	UserMaxPositions  int
 	Debug             bool
 }
 
@@ -24,8 +25,9 @@ func NewAnalyzer(db Store) *Analyzer {
 		ctx:               context.Background(),
 		api:               polyapi.NewPolyapi(),
 		db:                db,
-		UserCacheDuration: 48 * time.Hour,
+		UserCacheDuration: 24 * time.Hour,
 		UserMinimumBets:   10,
+		UserMaxPositions:  1000,
 		Debug:             true,
 	}
 }
@@ -179,7 +181,7 @@ func (o *Analyzer) GetScoredUser(proxyWallet, name string) (*ScoredUser, error) 
 		return u, nil
 	}
 
-	closedPositions, err := o.api.GetAllClosedPositions(o.ctx, proxyWallet)
+	closedPositions, err := o.api.GetAllClosedPositions(o.ctx, proxyWallet, o.UserMaxPositions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user info for wallet %s: %w", proxyWallet, err)
 	}

@@ -1,7 +1,7 @@
 ###
 GET https://data-api.polymarket.com/v1/closed-positions
 ?limit=10
-&sortBy=REALIZEDPNL
+&sortBy=TIMESTAMP
 &sortDirection=DESC
 &user=0x5669c2d70390d821291a6843e587c6500f310f13
 
